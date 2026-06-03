@@ -1,0 +1,8 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Note: ctk/vectors/signing_key.pub is a PUBLIC key and is intentionally tracked.

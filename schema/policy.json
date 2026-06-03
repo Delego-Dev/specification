@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Delego-Dev/specification/blob/main/schema/policy.json",
+  "title": "delego policy",
+  "description": "A delego authorization policy. See spec.md §5.",
+  "type": "object",
+  "required": ["default"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "minimum": 1, "default": 1 },
+    "default": { "enum": ["deny", "allow", "needs_approval"] },
+    "forbidden": { "type": "array", "items": { "$ref": "#/$defs/forbiddenRule" } },
+    "rules": { "type": "array", "items": { "$ref": "#/$defs/rule" } }
+  },
+  "$defs": {
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "host": { "type": "string" },
+        "path": { "type": "string" },
+        "path_contains": { "type": "string" }
+      }
+    },
+    "forbiddenRule": {
+      "type": "object",
+      "required": ["name", "match"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "match": { "$ref": "#/$defs/match" }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "required": ["name", "decision", "match"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "decision": { "enum": ["allow", "needs_approval"] },
+        "match": { "$ref": "#/$defs/match" },
+        "constraints": { "$ref": "#/$defs/constraints" }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "type": "object",
+          "required": ["field"],
+          "additionalProperties": false,
+          "properties": {
+            "field": { "type": "string" },
+            "max": { "type": "number" },
+            "currency": { "type": "string" }
+          }
+        },
+        "allow_list": {
+          "type": "object",
+          "required": ["field", "in"],
+          "additionalProperties": false,
+          "properties": {
+            "field": { "type": "string" },
+            "in": { "type": "array" }
+          }
+        },
+        "rate_limit": {
+          "type": "object",
+          "required": ["max"],
+          "additionalProperties": false,
+          "properties": {
+            "max": { "type": "integer", "minimum": 0 },
+            "per": { "enum": ["minute", "hour", "day"] }
+          }
+        }
+      }
+    }
+  }
+}

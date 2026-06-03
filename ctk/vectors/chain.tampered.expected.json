@@ -1,0 +1,6 @@
+{
+  "valid": false,
+  "problems": [
+    "seq 0: content hash mismatch (tampered)"
+  ]
+}

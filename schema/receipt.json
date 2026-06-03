@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Delego-Dev/specification/blob/main/schema/receipt.json",
+  "title": "delego audit receipt",
+  "description": "A single receipt in the signed, hash-linked audit chain. See spec.md §8.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "seq", "ts", "phase", "outcome", "rule", "reasons",
+    "intent_hash", "action_fingerprint", "action_summary", "approval_id",
+    "prev_hash", "entry_hash", "signature"
+  ],
+  "properties": {
+    "seq": { "type": "integer", "minimum": 0 },
+    "ts": { "type": "string", "description": "ISO-8601 UTC timestamp" },
+    "phase": { "enum": ["decision", "execution"] },
+    "outcome": { "enum": ["allow", "deny", "needs_approval"] },
+    "rule": { "type": ["string", "null"] },
+    "reasons": { "type": "array", "items": { "type": "string" } },
+    "intent_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "action_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "action_summary": { "type": "string" },
+    "approval_id": { "type": ["string", "null"] },
+    "prev_hash": {
+      "type": "string",
+      "pattern": "^([0-9a-f]{64}|GENESIS)$",
+      "description": "Previous receipt's entry_hash, or the literal GENESIS for seq 0."
+    },
+    "entry_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "signature": {
+      "type": "string",
+      "pattern": "^[0-9a-f]+$",
+      "description": "Ed25519 signature over UTF-8(entry_hash), hex-encoded."
+    }
+  }
+}

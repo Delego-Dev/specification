@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Delego-Dev/specification/blob/main/schema/authorization-token.json",
+  "title": "delego authorization token (JWT claim set)",
+  "description": "The decoded claim set of a delego authorization token (JWS, alg=EdDSA). See spec.md §9.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["iss", "aud", "iat", "exp", "jti", "fpr", "iht"],
+  "properties": {
+    "iss": { "type": "string", "description": "Authorizer identifier." },
+    "aud": { "type": "string", "description": "Intended broker/service identifier." },
+    "iat": { "type": "integer", "description": "Issued-at (epoch seconds)." },
+    "exp": { "type": "integer", "description": "Expiry (epoch seconds); TTL SHOULD be <= 60s." },
+    "jti": { "type": "string", "description": "Unique token id (replay protection)." },
+    "fpr": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Authorized action_fingerprint." },
+    "iht": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "intent_hash." },
+    "apr": { "type": "string", "description": "approval_id, when a human approved." },
+    "pol": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "integer" },
+        "rule": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+[
+  {
+    "action": {
+      "instruction": "check my balance",
+      "method": "GET",
+      "url": "https://api.examplebank.in/accounts/me",
+      "params": {}
+    },
+    "outcome": "allow",
+    "rule": "read-accounts",
+    "reasons": [
+      "rate_limit: 1/50 per hour"
+    ]
+  },
+  {
+    "action": {
+      "instruction": "share my statements",
+      "method": "POST",
+      "url": "https://api.examplebank.in/accounts/me/permissions",
+      "params": {
+        "grant": "x@y.com"
+      }
+    },
+    "outcome": "deny",
+    "rule": "no-access-control-changes",
+    "reasons": [
+      "forbidden: Agents may never modify permissions or sharing"
+    ]
+  },
+  {
+    "action": {
+      "instruction": "pay the contractor",
+      "method": "POST",
+      "url": "https://api.examplebank.in/transfer",
+      "params": {
+        "amount": 50000,
+        "currency": "INR",
+        "beneficiary_type": "domestic"
+      }
+    },
+    "outcome": "deny",
+    "rule": "small-domestic-transfer",
+    "reasons": [
+      "amount: 50000 exceeds max 5000 INR"
+    ]
+  },
+  {
+    "action": {
+      "instruction": "pay my electricity bill",
+      "method": "POST",
+      "url": "https://api.examplebank.in/transfer",
+      "params": {
+        "amount": 2400,
+        "currency": "INR",
+        "beneficiary_type": "domestic"
+      }
+    },
+    "outcome": "needs_approval",
+    "rule": "small-domestic-transfer",
+    "reasons": [
+      "amount: 2400 within max 5000",
+      "allow_list: beneficiary_type='domestic' permitted"
+    ]
+  }
+]

@@ -1,0 +1,47 @@
+[
+  {
+    "action": {
+      "instruction": "check my balance",
+      "method": "GET",
+      "url": "https://api.examplebank.in/accounts/me",
+      "params": {}
+    },
+    "intent_canonical_json": "{\"instruction\":\"check my balance\"}",
+    "intent_hash": "cb091de0cf51909850329b23d6552563700889909c2d0db240dc9614720fc224",
+    "fingerprint_canonical_json": "{\"host\":\"api.examplebank.in\",\"method\":\"GET\",\"params\":{},\"path\":\"/accounts/me\"}",
+    "action_fingerprint": "8dbf1c7409bc66eda1be5679163ebc455e15078226d655d8b7e406c49688e2dd"
+  },
+  {
+    "action": {
+      "instruction": "pay my electricity bill",
+      "method": "POST",
+      "url": "https://api.examplebank.in/transfer",
+      "params": {
+        "amount": 2400,
+        "currency": "INR",
+        "beneficiary_type": "domestic"
+      }
+    },
+    "intent_canonical_json": "{\"instruction\":\"pay my electricity bill\"}",
+    "intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+    "fingerprint_canonical_json": "{\"host\":\"api.examplebank.in\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"beneficiary_type\":\"domestic\",\"currency\":\"INR\"},\"path\":\"/transfer\"}",
+    "action_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e"
+  },
+  {
+    "action": {
+      "instruction": "pay my electricity bill",
+      "method": "POST",
+      "url": "https://api.examplebank.in/transfer",
+      "params": {
+        "amount": 2400,
+        "currency": "INR",
+        "beneficiary_type": "domestic",
+        "to": "attacker"
+      }
+    },
+    "intent_canonical_json": "{\"instruction\":\"pay my electricity bill\"}",
+    "intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+    "fingerprint_canonical_json": "{\"host\":\"api.examplebank.in\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"beneficiary_type\":\"domestic\",\"currency\":\"INR\",\"to\":\"attacker\"},\"path\":\"/transfer\"}",
+    "action_fingerprint": "f8e933c3ea285c35d9b99839a59d217e6b1f5e433f198c3438555db3210b3499"
+  }
+]
