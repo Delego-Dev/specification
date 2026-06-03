@@ -1,6 +1,6 @@
 # delego Wire Specification
 
-**Version:** 0.1.0 (draft) · **Status:** Draft · **License:** Apache-2.0
+**Version:** 0.3.0 (draft) · **Status:** Draft · **License:** Apache-2.0
 
 This document specifies the **delego protocol**: how an *action proposed by an
 agent* is authorized — deterministically, with no LLM in the decision path —
@@ -36,6 +36,25 @@ Authorizer in deterministic code. An Authorizer **MUST NOT** consult a language
 model, or any non-deterministic input, when rendering a decision (§6). The Agent
 is assumed compromisable; the protocol's job is to bound blast radius and prove
 provenance, not to infer the human's intent semantically.
+
+## 2.1 Protocol versions
+
+delego is versioned so the **specification can lead the reference
+implementation**. A behaviour is specified here *first* — marked *draft, not yet
+in reference* — and becomes reference-backed only once the implementation
+reproduces its Conformance Test Kit vectors (§10). The reference's protocol
+version (`delego.__protocol_version__`) therefore **MUST** always be ≤ the version
+of this document.
+
+| Version | Status | Adds |
+|---------|--------|------|
+| **0.1.0** | reference-complete, CTK-backed | Canonical JSON (§3); intent hash + action fingerprint (§4); deterministic policy & decision, first-match-wins, fail-closed (§5–§6); fingerprint-bound approval / confused-deputy guard (§7); append-only, hash-linked, Ed25519-signed audit chain + verification (§8). |
+| **0.2.0** | reference-complete, CTK-backed | Approval & audit hardening. Approvals are additionally bound to the `intent_hash` and made **single-use** (§7); an approved action's `execution` receipt carries the rule it was parked under, so `rate_limit` counts it (§5, §8); verification treats a malformed or partial receipt as a *failure* rather than aborting the walk (§8.1). |
+| **0.3.0** | **draft — not yet in reference** | Query-string-bound fingerprint (§4.2); signed authorization token (§9, §9.1). |
+
+This document is at **0.3.0 (draft)**; the reference implements **0.2.0**. Clauses
+introduced after 0.1.0 are tagged inline — *(since 0.2)* for reference-backed
+behaviour, *(0.3, draft)* for the not-yet-implemented frontier.
 
 ## 3. Canonicalization (NORMATIVE)
 
@@ -112,6 +131,36 @@ transfer {…, to:"attacker"}    (one param added)
 
 See [`ctk/vectors/hashing.json`](ctk/vectors/hashing.json) for the full set.
 
+### 4.2 Query string *(0.3, draft — not yet in reference)*
+
+Through 0.2 the fingerprint covers `method`, `host`, `path`, and the
+agent-declared `params`; the URL's **query string is not part of the
+fingerprint**. Two requests that differ only in their query (e.g.
+`/transfer?to=me` vs `/transfer?to=attacker`) therefore share one fingerprint —
+a confused-deputy gap if decision-relevant data rides the query.
+
+Until 0.3, an Authorizer and Broker **MUST** ensure no decision-relevant value is
+taken from the query string: a Broker **MUST NOT** forward query parameters that
+are not represented in `params`.
+
+In **0.3** the fingerprint folds the canonicalized query into its preimage:
+
+```
+query = the URL query parsed into a list of [name, value] pairs,
+        sorted lexicographically by (name, value)
+action_fingerprint = sha256(canonical_json({
+  "host":   host,
+  "method": uppercase(method),
+  "params": params,
+  "path":   path,
+  "query":  query
+}))
+```
+
+This changes the fingerprint preimage and is therefore a **breaking** change
+(§8.2); it bumps the protocol version and ships with updated `hashing` CTK vectors
+when the reference implements it.
+
 ## 5. Policy
 
 A policy is a document (YAML or JSON) conforming to
@@ -143,7 +192,13 @@ an empty match matches nothing.
   value MUST be ≤ `max`.
 - `allow_list` — `{ field, in: [...] }`. The named field's value MUST be a member.
 - `rate_limit` — `{ max, per: minute|hour|day }`. Counts prior `allow` receipts
-  for the same rule within the window (§8); denies at or above `max`.
+  for the same rule within the window (§8); denies at or above `max`. A
+  `rate_limit` the Authorizer cannot evaluate (no audit ledger available) **MUST**
+  `deny`, never silently pass. *(since 0.2)* The `allow` receipt of an action
+  released through human approval (§7) carries the rule the approval was parked
+  under, so such executions are counted too. The cap is evaluated at **decision**
+  time; an action parked for approval is counted only once released, so several
+  actions parked before any release MAY each execute even past `max`.
 
 > **Glob note (v0.1).** Path globbing is coarse: `**` and `*` are treated alike
 > and both span `/`. Per-segment globbing is a planned refinement; a conformant
@@ -161,23 +216,61 @@ Evaluation order is fixed:
 
 The result is `{ outcome, rule, reasons }` where `outcome` ∈ `{allow, deny,
 needs_approval}`, `rule` is the matched rule name (or null), and `reasons` is a
-list of human-readable strings. Evaluation **MUST** be a pure function of
-(action, policy, audit ledger) — identical inputs yield identical outputs.
+list of human-readable strings. Evaluation **MUST** be a pure, deterministic
+function of (action, policy, audit ledger, evaluation time) — there is no
+stochastic or hidden input. (The `rate_limit` constraint is the only one that
+reads the evaluation time, to size its window; all others depend on action and
+policy alone.)
 
 Authoritative decision vectors: [`ctk/vectors/decisions.json`](ctk/vectors/decisions.json).
 
 ## 7. Approval binding (the confused-deputy guard)
 
-When the outcome is `needs_approval`, the Authorizer parks the action bound to
-its exact `action_fingerprint` and returns an `approval_id`. A human decides
-out-of-band.
+When the outcome is `needs_approval`, the Authorizer parks the action — bound to
+its exact `action_fingerprint` **and** `intent_hash` — and returns an
+`approval_id`. A human decides out-of-band. An approval moves through a status
+lifecycle:
+
+```
+pending ──approve──▶ approved ──release──▶ consumed
+   └─────deny──────▶ denied
+```
+
+`approved` and `denied` are set by the human decision; `consumed` is set by the
+Authorizer when the approval releases its action (below). `denied` and `consumed`
+are terminal.
 
 When the Agent later presents an action to *release* an approval, the Authorizer
-**MUST** recompute the presented action's `action_fingerprint` and compare it to
-the fingerprint the approval was issued for. **If they differ, the outcome MUST
-be `deny`** — the approval does not transfer to a different action. This holds
-**before** the approval's status is considered: a substituted action is refused
-whether or not a human has approved the original.
+**MUST** evaluate, in this order:
+
+1. **Fingerprint guard.** Recompute the presented action's `action_fingerprint`
+   and compare it to the one the approval was issued for. **If they differ, the
+   outcome MUST be `deny`** — the approval does not transfer to a different
+   action. This check is made **before** the approval's status is considered: a
+   substituted action is refused whether or not a human has approved the original.
+
+2. **Intent guard** *(since 0.2)*. Recompute the presented action's `intent_hash`
+   and compare it to the approval's. **If they differ, the outcome MUST be
+   `deny`** — the approval does not transfer to a different claimed instruction,
+   so an approval granted for one stated purpose cannot be re-pointed at another.
+
+3. **Status.** Then resolve by the approval's status:
+   - `pending` → outcome `needs_approval` (no human decision yet);
+   - `denied` → outcome `deny`;
+   - `consumed` → outcome `deny` *(since 0.2)* — see single-use, below;
+   - `approved` → release the action: the Authorizer **MUST** transition the
+     approval to `consumed`, then execute, emitting an `execution`/`allow` receipt
+     that carries the rule the approval was parked under (§5, §8).
+
+**Single-use** *(since 0.2)*. An approval releases its action **at most once**.
+The transition to `consumed` **MUST** happen no later than execution, so a
+*replayed* release of an already-consumed approval is refused by the status check
+above. One human "yes" authorises exactly one execution; a redirected Agent
+cannot replay it to run the same action again.
+
+Every refusal in this section **MUST** be recorded as an `execution`/`deny`
+receipt (§8). Authoritative vectors:
+[`ctk/vectors/resolve.json`](ctk/vectors/resolve.json).
 
 ## 8. Receipt & audit chain (NORMATIVE)
 
@@ -220,6 +313,12 @@ An Auditor verifies a chain by walking it in `seq` order. For each receipt it
 The chain is valid iff every check passes for every receipt. Editing,
 reordering, inserting, or deleting any receipt breaks at least one check.
 
+*(since 0.2)* A **structurally invalid** receipt — one not parseable as JSON, or
+missing any of the eleven signed fields — **MUST** be treated as a verification
+failure at that position (and the chain link across it as broken), not as an error
+that aborts the walk. A verifier that throws on a malformed receipt is one an
+attacker can silence by corrupting a single byte.
+
 Authoritative vectors: a valid chain ([`ctk/vectors/chain.jsonl`](ctk/vectors/chain.jsonl),
 expected [`chain.expected.json`](ctk/vectors/chain.expected.json)) and a tampered
 chain that MUST fail at `seq 0` ([`chain.tampered.jsonl`](ctk/vectors/chain.tampered.jsonl)),
@@ -231,10 +330,10 @@ The set of payload fields is part of the wire format. Any change to it is a
 **breaking** change: it MUST bump this specification's version and the receipt
 `schema` version together, or previously-signed chains stop verifying.
 
-## 9. Authorization Token (NORMATIVE)
+## 9. Authorization Token (NORMATIVE) *(0.3, draft — not yet in reference)*
 
 > **Status: draft, not yet implemented in the reference.** This section defines
-> the v0.3 protocol that closes the gap where a Broker would inject a credential
+> the 0.3 protocol that closes the gap where a Broker would inject a credential
 > for *any* in-scope request. It converges with
 > [RFC 8693](https://www.rfc-editor.org/rfc/rfc8693) (token exchange).
 
@@ -280,11 +379,28 @@ See [`examples/authorization-token.md`](examples/authorization-token.md) and
 
 ## 10. Conformance
 
+An implementation declares the highest protocol version (§2.1) it implements, and
+**MUST** satisfy every clause at or below that version and reproduce that version's
+CTK vectors. The reference implements **0.2.0**.
+
+**0.1.0**
 - A conformant **Authorizer** MUST implement §3–§8 and reproduce the CTK
   `hashing` and `decisions` vectors, and produce chains that verify per §8.1.
 - A conformant **Auditor** MUST implement §8.1 and agree with the CTK `chain`
   expectations (valid and tampered).
-- A conformant **Broker** that participates in §9 MUST implement §9.1.
+
+**0.2.0** (additionally)
+- An **Authorizer** MUST implement the §7 intent guard and single-use semantics
+  and reproduce the CTK `resolve` vectors; MUST attribute an approved action's
+  `allow` receipt to its parking rule (§5, §8); MUST `deny` a `rate_limit` it
+  cannot evaluate (§5).
+- An **Auditor** MUST treat a malformed or partial receipt as a verification
+  failure, not an error (§8.1).
+
+**0.3.0** (draft — not yet in reference)
+- An **Authorizer** binds the query string into the fingerprint (§4.2) and MAY
+  mint authorization tokens (§9).
+- A **Broker** that participates in §9 MUST implement §9.1.
 
 ## 11. Security considerations
 

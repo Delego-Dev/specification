@@ -13,6 +13,7 @@ conformant implementation MUST reproduce it.
 | [`vectors/decisions.json`](vectors/decisions.json) | Load the example policy, evaluate each action (spec §5–§6), and match `outcome` / `rule` / `reasons`. |
 | [`vectors/chain.jsonl`](vectors/chain.jsonl) + [`vectors/chain.expected.json`](vectors/chain.expected.json) | Verify the chain (spec §8.1) using [`vectors/signing_key.pub`](vectors/signing_key.pub); it MUST be valid with the listed `seqs`. |
 | [`vectors/chain.tampered.jsonl`](vectors/chain.tampered.jsonl) + [`vectors/chain.tampered.expected.json`](vectors/chain.tampered.expected.json) | The same chain with `seq 0` edited and not re-signed; verification MUST fail with a content-hash mismatch at `seq 0`. |
+| [`vectors/resolve.json`](vectors/resolve.json) *(0.2)* | For each case, given a parked `approval` (its `action_fingerprint`, `intent_hash`, `status`, `rule`) and a `presented_action`, apply the §7 resolution rules (fingerprint guard → intent guard → status) and match `expected.outcome`; the emitted reason MUST contain `expected.reason_contains`. Exercises the confused-deputy guard, the intent guard, and single-use replay refusal. |
 
 The policy used for the decision and chain vectors is
 [`../examples/policy.example.yaml`](../examples/policy.example.yaml). The public
