@@ -2,7 +2,7 @@
 
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-green.svg)](CONTRIBUTING.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Spec](https://img.shields.io/badge/spec-v0.1.0--draft-orange.svg)](spec.md)
+[![Spec](https://img.shields.io/badge/spec-v0.3--draft-orange.svg)](spec.md)
 
 The open specification for **delego** — a deterministic **authorization & audit
 protocol for AI-agent actions**. It defines how an action proposed by an agent
@@ -69,10 +69,11 @@ reproduce them; see [§10 Conformance](spec.md#10-conformance).
 
 ## Status & versioning
 
-**v0.1.0 — draft.** §3–§8 formalize the reference implementation; §9
-(Authorization Token) defines the next protocol increment and is not yet
-implemented. The wire format is versioned with the spec — a breaking change to
-the receipt fields bumps the version together (see [§8.2](spec.md#82-schema-versioning)).
+**v0.3 — draft.** The spec/protocol is versioned `0.x` (the reference *package*
+is `0.x.y`). 0.1–0.2 are reference-backed; 0.3 (query-string fingerprint §4.2,
+authorization token §9) is specified but not yet in the reference. See the
+[§2.1 version matrix](spec.md#21-protocol-versions). A breaking change to the
+receipt fields bumps the version (see [§8.2](spec.md#82-schema-versioning)).
 
 ## Contributing
 

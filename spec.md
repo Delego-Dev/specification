@@ -1,6 +1,6 @@
 # delego Wire Specification
 
-**Version:** 0.3.0 (draft) · **Status:** Draft · **License:** Apache-2.0
+**Version:** 0.3 (draft) · **Status:** Draft · **License:** Apache-2.0
 
 This document specifies the **delego protocol**: how an *action proposed by an
 agent* is authorized — deterministically, with no LLM in the decision path —
@@ -48,12 +48,12 @@ of this document.
 
 | Version | Status | Adds |
 |---------|--------|------|
-| **0.1.0** | reference-complete, CTK-backed | Canonical JSON (§3); intent hash + action fingerprint (§4); deterministic policy & decision, first-match-wins, fail-closed (§5–§6); fingerprint-bound approval / confused-deputy guard (§7); append-only, hash-linked, Ed25519-signed audit chain + verification (§8). |
-| **0.2.0** | reference-complete, CTK-backed | Approval & audit hardening. Approvals are additionally bound to the `intent_hash` and made **single-use** (§7); an approved action's `execution` receipt carries the rule it was parked under, so `rate_limit` counts it (§5, §8); verification treats a malformed or partial receipt as a *failure* rather than aborting the walk (§8.1). |
-| **0.3.0** | **draft — not yet in reference** | Query-string-bound fingerprint (§4.2); signed authorization token (§9, §9.1). |
+| **0.1** | reference-complete, CTK-backed | Canonical JSON (§3); intent hash + action fingerprint (§4); deterministic policy & decision, first-match-wins, fail-closed (§5–§6); fingerprint-bound approval / confused-deputy guard (§7); append-only, hash-linked, Ed25519-signed audit chain + verification (§8). |
+| **0.2** | reference-complete, CTK-backed | Approval & audit hardening. Approvals are additionally bound to the `intent_hash` and made **single-use** (§7); an approved action's `execution` receipt carries the rule it was parked under, so `rate_limit` counts it (§5, §8); verification treats a malformed or partial receipt as a *failure* rather than aborting the walk (§8.1). |
+| **0.3** | **draft — not yet in reference** | Query-string-bound fingerprint (§4.2); signed authorization token (§9, §9.1). |
 
-This document is at **0.3.0 (draft)**; the reference implements **0.2.0**. Clauses
-introduced after 0.1.0 are tagged inline — *(since 0.2)* for reference-backed
+This document is at **0.3 (draft)**; the reference implements **0.2**. Clauses
+introduced after 0.1 are tagged inline — *(since 0.2)* for reference-backed
 behaviour, *(0.3, draft)* for the not-yet-implemented frontier.
 
 ## 3. Canonicalization (NORMATIVE)
@@ -311,7 +311,19 @@ An Auditor verifies a chain by walking it in `seq` order. For each receipt it
 3. **Signature** — `Ed25519_verify(pubkey, signature, UTF8(entry_hash))` succeeds.
 
 The chain is valid iff every check passes for every receipt. Editing,
-reordering, inserting, or deleting any receipt breaks at least one check.
+reordering, inserting, or deleting a receipt **from anywhere but the end** breaks
+at least one check.
+
+**Truncation is not detected by chaining alone (NORMATIVE caveat).** Removing the
+most recent receipts leaves a shorter but internally consistent prefix that
+verifies clean — the chain commits each receipt to its predecessor, not to the
+*length* of the log. Likewise, an Auditor that only holds the Authorizer's public
+key cannot detect this, and an attacker who holds the (local) signing key can
+re-sign an arbitrary rewrite. To detect truncation or rollback, the head **MUST**
+be anchored outside the log: persist the latest `(seq, entry_hash)` somewhere the
+writer can't unilaterally rewrite (a remote store, a second host, a transparency
+log) and reject a chain whose last receipt doesn't match it. High-assurance
+deployments **SHOULD** also keep the signing key in an HSM/KMS.
 
 *(since 0.2)* A **structurally invalid** receipt — one not parseable as JSON, or
 missing any of the eleven signed fields — **MUST** be treated as a verification
@@ -381,15 +393,15 @@ See [`examples/authorization-token.md`](examples/authorization-token.md) and
 
 An implementation declares the highest protocol version (§2.1) it implements, and
 **MUST** satisfy every clause at or below that version and reproduce that version's
-CTK vectors. The reference implements **0.2.0**.
+CTK vectors. The reference implements **0.2**.
 
-**0.1.0**
+**0.1**
 - A conformant **Authorizer** MUST implement §3–§8 and reproduce the CTK
   `hashing` and `decisions` vectors, and produce chains that verify per §8.1.
 - A conformant **Auditor** MUST implement §8.1 and agree with the CTK `chain`
   expectations (valid and tampered).
 
-**0.2.0** (additionally)
+**0.2** (additionally)
 - An **Authorizer** MUST implement the §7 intent guard and single-use semantics
   and reproduce the CTK `resolve` vectors; MUST attribute an approved action's
   `allow` receipt to its parking rule (§5, §8); MUST `deny` a `rate_limit` it
@@ -397,7 +409,7 @@ CTK vectors. The reference implements **0.2.0**.
 - An **Auditor** MUST treat a malformed or partial receipt as a verification
   failure, not an error (§8.1).
 
-**0.3.0** (draft — not yet in reference)
+**0.3** (draft — not yet in reference)
 - An **Authorizer** binds the query string into the fingerprint (§4.2) and MAY
   mint authorization tokens (§9).
 - A **Broker** that participates in §9 MUST implement §9.1.

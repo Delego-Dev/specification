@@ -44,7 +44,8 @@ except ImportError:  # pragma: no cover
 
 def spec_version() -> tuple[int, ...]:
     text = (ROOT / "spec.md").read_text(encoding="utf-8")
-    m = re.search(r"\*\*Version:\*\*\s*([0-9]+\.[0-9]+\.[0-9]+)", text)
+    # Spec/protocol versions are two-component (0.x); tolerate a patch too.
+    m = re.search(r"\*\*Version:\*\*\s*([0-9]+\.[0-9]+(?:\.[0-9]+)?)", text)
     return tuple(int(x) for x in m.group(1).split("."))
 
 

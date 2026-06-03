@@ -6,7 +6,16 @@ versioned independently of the reference implementation and **leads** it: a
 behaviour is specified (marked *draft — not yet in reference*) before the
 reference implements it. See [`spec.md` §2.1](spec.md) for the version matrix.
 
-## [0.3.0-draft] — Unreleased
+## [0.3-draft] — Unreleased
+
+### Fixed
+- §8.1 corrected: hash-chaining does **not** detect truncation of the most recent
+  receipts (a truncated prefix verifies clean), nor a holder of the local signing
+  key. Added a normative caveat requiring external head anchoring for rollback
+  detection — the prior "deleting any receipt breaks a check" claim was wrong.
+- Version notation normalised to the `0.x` scheme everywhere (spec/protocol is
+  `0.x`; the reference *package* is `0.x.y`). `conformance.py` now parses a
+  two-component spec version.
 
 ### Added (0.3, draft — not yet in reference)
 - §4.2 — the URL **query string** is folded into the `action_fingerprint`
@@ -34,9 +43,9 @@ reference implements it. See [`spec.md` §2.1](spec.md) for the version matrix.
 ### Changed
 - §6 — the determinism requirement now names *evaluation time* as an input
   (the `rate_limit` window), rather than implying a time-independent function.
-- Document version → 0.3.0-draft.
+- Document version → 0.3-draft.
 
-## [0.1.0-draft] — initial specification
+## [0.1-draft] — initial specification
 
 ### Added
 - §3 canonical JSON; §4 intent hash + action fingerprint; §5–§6 deterministic
@@ -45,5 +54,5 @@ reference implements it. See [`spec.md` §2.1](spec.md) for the version matrix.
   §9 authorization-token draft.
 - JSON Schemas (`schema/`), CTK vectors (`ctk/`), and `validate.py`.
 
-[0.3.0-draft]: https://github.com/Delego-Dev/specification
-[0.1.0-draft]: https://github.com/Delego-Dev/specification/releases/tag/v0.1.0
+[0.3-draft]: https://github.com/Delego-Dev/specification
+[0.1-draft]: https://github.com/Delego-Dev/specification/releases/tag/v0.1
