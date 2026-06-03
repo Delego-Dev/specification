@@ -1,0 +1,173 @@
+[
+  {
+    "name": "unknown approval id is denied",
+    "approval": null,
+    "presented_action": {
+      "instruction": "place a small order",
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": {
+        "amount": 2400,
+        "currency": "USD",
+        "destination": "internal"
+      }
+    },
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "expected": {
+      "outcome": "deny",
+      "reason_contains": "unknown approval id"
+    }
+  },
+  {
+    "name": "fingerprint mismatch is refused (before status)",
+    "approval": {
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+      "status": "pending",
+      "rule": "place-order"
+    },
+    "presented_action": {
+      "instruction": "place a small order",
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": {
+        "amount": 2400,
+        "currency": "USD",
+        "destination": "internal",
+        "recipient": "attacker"
+      }
+    },
+    "presented_fingerprint": "dabddc8fc7e8fb30bdec6fb796a336b7897d4a2a12ae386727e2110d7e0e9572",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "expected": {
+      "outcome": "deny",
+      "reason_contains": "approval/action mismatch: this approval was issued for a different action (possible confused-deputy / substituted action)"
+    }
+  },
+  {
+    "name": "intent mismatch is refused",
+    "approval": {
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+      "status": "approved",
+      "rule": "place-order"
+    },
+    "presented_action": {
+      "instruction": "place a different order",
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": {
+        "amount": 2400,
+        "currency": "USD",
+        "destination": "internal"
+      }
+    },
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "70b7c5af667d7dc104bd9baaf5c26ebdabeebe69272ee013a6306e208a09c4b3",
+    "expected": {
+      "outcome": "deny",
+      "reason_contains": "approval/intent mismatch: this approval was issued for a different instruction"
+    }
+  },
+  {
+    "name": "matching action while pending awaits approval",
+    "approval": {
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+      "status": "pending",
+      "rule": "place-order"
+    },
+    "presented_action": {
+      "instruction": "place a small order",
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": {
+        "amount": 2400,
+        "currency": "USD",
+        "destination": "internal"
+      }
+    },
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "expected": {
+      "outcome": "needs_approval",
+      "reason_contains": "awaiting human approval"
+    }
+  },
+  {
+    "name": "human-denied action is refused",
+    "approval": {
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+      "status": "denied",
+      "rule": "place-order"
+    },
+    "presented_action": {
+      "instruction": "place a small order",
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": {
+        "amount": 2400,
+        "currency": "USD",
+        "destination": "internal"
+      }
+    },
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "expected": {
+      "outcome": "deny",
+      "reason_contains": "human denied this action"
+    }
+  },
+  {
+    "name": "approved action is released once",
+    "approval": {
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+      "status": "approved",
+      "rule": "place-order"
+    },
+    "presented_action": {
+      "instruction": "place a small order",
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": {
+        "amount": 2400,
+        "currency": "USD",
+        "destination": "internal"
+      }
+    },
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "expected": {
+      "outcome": "allow",
+      "reason_contains": "human approved by 'human'"
+    }
+  },
+  {
+    "name": "replay of a consumed approval is refused",
+    "approval": {
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+      "status": "consumed",
+      "rule": "place-order"
+    },
+    "presented_action": {
+      "instruction": "place a small order",
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": {
+        "amount": 2400,
+        "currency": "USD",
+        "destination": "internal"
+      }
+    },
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "expected": {
+      "outcome": "deny",
+      "reason_contains": "approval already used: this single-use approval has already released its action"
+    }
+  }
+]

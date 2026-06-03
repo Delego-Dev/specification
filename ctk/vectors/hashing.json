@@ -1,47 +1,47 @@
 [
   {
     "action": {
-      "instruction": "check my balance",
+      "instruction": "read my account details",
       "method": "GET",
-      "url": "https://api.examplebank.in/accounts/me",
+      "url": "https://api.example.com/accounts/me",
       "params": {}
     },
-    "intent_canonical_json": "{\"instruction\":\"check my balance\"}",
-    "intent_hash": "cb091de0cf51909850329b23d6552563700889909c2d0db240dc9614720fc224",
-    "fingerprint_canonical_json": "{\"host\":\"api.examplebank.in\",\"method\":\"GET\",\"params\":{},\"path\":\"/accounts/me\"}",
-    "action_fingerprint": "8dbf1c7409bc66eda1be5679163ebc455e15078226d655d8b7e406c49688e2dd"
+    "intent_canonical_json": "{\"instruction\":\"read my account details\"}",
+    "intent_hash": "ec949034e985a92f3bcd9f9ab8313a80005157698f748f2b8df6163c04af4619",
+    "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"GET\",\"params\":{},\"path\":\"/accounts/me\"}",
+    "action_fingerprint": "497e02606ea157ca8ca885cbbd33d1a8a70c40fdaf6f15c5154d858f870b8b61"
   },
   {
     "action": {
-      "instruction": "pay my electricity bill",
+      "instruction": "place a small order",
       "method": "POST",
-      "url": "https://api.examplebank.in/transfer",
+      "url": "https://api.example.com/orders",
       "params": {
         "amount": 2400,
-        "currency": "INR",
-        "beneficiary_type": "domestic"
+        "currency": "USD",
+        "destination": "internal"
       }
     },
-    "intent_canonical_json": "{\"instruction\":\"pay my electricity bill\"}",
-    "intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
-    "fingerprint_canonical_json": "{\"host\":\"api.examplebank.in\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"beneficiary_type\":\"domestic\",\"currency\":\"INR\"},\"path\":\"/transfer\"}",
-    "action_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e"
+    "intent_canonical_json": "{\"instruction\":\"place a small order\"}",
+    "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"currency\":\"USD\",\"destination\":\"internal\"},\"path\":\"/orders\"}",
+    "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394"
   },
   {
     "action": {
-      "instruction": "pay my electricity bill",
+      "instruction": "place a small order",
       "method": "POST",
-      "url": "https://api.examplebank.in/transfer",
+      "url": "https://api.example.com/orders",
       "params": {
         "amount": 2400,
-        "currency": "INR",
-        "beneficiary_type": "domestic",
-        "to": "attacker"
+        "currency": "USD",
+        "destination": "internal",
+        "recipient": "attacker"
       }
     },
-    "intent_canonical_json": "{\"instruction\":\"pay my electricity bill\"}",
-    "intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
-    "fingerprint_canonical_json": "{\"host\":\"api.examplebank.in\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"beneficiary_type\":\"domestic\",\"currency\":\"INR\",\"to\":\"attacker\"},\"path\":\"/transfer\"}",
-    "action_fingerprint": "f8e933c3ea285c35d9b99839a59d217e6b1f5e433f198c3438555db3210b3499"
+    "intent_canonical_json": "{\"instruction\":\"place a small order\"}",
+    "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"currency\":\"USD\",\"destination\":\"internal\",\"recipient\":\"attacker\"},\"path\":\"/orders\"}",
+    "action_fingerprint": "dabddc8fc7e8fb30bdec6fb796a336b7897d4a2a12ae386727e2110d7e0e9572"
   }
 ]
