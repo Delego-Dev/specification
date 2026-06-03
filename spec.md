@@ -108,25 +108,25 @@ action_fingerprint = sha256(canonical_json({
 
 ### 4.1 Worked example (authoritative)
 
-For `GET https://api.examplebank.in/accounts/me`, instruction `"check my balance"`,
+For `GET https://api.example.com/accounts/me`, instruction `"read my account details"`,
 `params = {}`:
 
 ```
 canonical_json for fingerprint:
-{"host":"api.examplebank.in","method":"GET","params":{},"path":"/accounts/me"}
+{"host":"api.example.com","method":"GET","params":{},"path":"/accounts/me"}
 
-intent_hash        = cb091de0cf51909850329b23d6552563700889909c2d0db240dc9614720fc224
-action_fingerprint = 8dbf1c7409bc66eda1be5679163ebc455e15078226d655d8b7e406c49688e2dd
+intent_hash        = ec949034e985a92f3bcd9f9ab8313a80005157698f748f2b8df6163c04af4619
+action_fingerprint = 497e02606ea157ca8ca885cbbd33d1a8a70c40fdaf6f15c5154d858f870b8b61
 ```
 
 Adding one parameter changes the fingerprint completely — this is what makes the
 confused-deputy guard (§7) work:
 
 ```
-transfer {amount:2400,currency:INR,beneficiary_type:domestic}
-  → 79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e
-transfer {…, to:"attacker"}    (one param added)
-  → f8e933c3ea285c35d9b99839a59d217e6b1f5e433f198c3438555db3210b3499
+order {amount:2400,currency:USD,destination:internal}
+  → c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394
+order {…, recipient:"attacker"}    (one param added)
+  → dabddc8fc7e8fb30bdec6fb796a336b7897d4a2a12ae386727e2110d7e0e9572
 ```
 
 See [`ctk/vectors/hashing.json`](ctk/vectors/hashing.json) for the full set.
@@ -136,7 +136,7 @@ See [`ctk/vectors/hashing.json`](ctk/vectors/hashing.json) for the full set.
 Through 0.2 the fingerprint covers `method`, `host`, `path`, and the
 agent-declared `params`; the URL's **query string is not part of the
 fingerprint**. Two requests that differ only in their query (e.g.
-`/transfer?to=me` vs `/transfer?to=attacker`) therefore share one fingerprint —
+`/orders?to=me` vs `/orders?to=attacker`) therefore share one fingerprint —
 a confused-deputy gap if decision-relevant data rides the query.
 
 Until 0.3, an Authorizer and Broker **MUST** ensure no decision-relevant value is
@@ -173,12 +173,12 @@ forbidden:               # hard denials, evaluated first
   - name: no-access-control-changes
     match: { path_contains: /permissions }
 rules:                   # first match wins
-  - name: small-domestic-transfer
+  - name: place-order
     decision: needs_approval
-    match: { method: POST, host: api.examplebank.in, path: /transfer }
+    match: { method: POST, host: api.example.com, path: /orders }
     constraints:
-      amount:     { field: amount, max: 5000, currency: INR }
-      allow_list: { field: beneficiary_type, in: [domestic] }
+      amount:     { field: amount, max: 5000, currency: USD }
+      allow_list: { field: destination, in: [internal] }
 ```
 
 A **rule** has a `name`, a `decision` (`allow` or `needs_approval`), a `match`,

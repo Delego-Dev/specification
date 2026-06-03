@@ -1,9 +1,9 @@
 [
   {
     "action": {
-      "instruction": "check my balance",
+      "instruction": "read my account details",
       "method": "GET",
-      "url": "https://api.examplebank.in/accounts/me",
+      "url": "https://api.example.com/accounts/me",
       "params": {}
     },
     "outcome": "allow",
@@ -14,11 +14,11 @@
   },
   {
     "action": {
-      "instruction": "share my statements",
+      "instruction": "share my account with a teammate",
       "method": "POST",
-      "url": "https://api.examplebank.in/accounts/me/permissions",
+      "url": "https://api.example.com/accounts/me/permissions",
       "params": {
-        "grant": "x@y.com"
+        "grant": "teammate@example.com"
       }
     },
     "outcome": "deny",
@@ -29,37 +29,37 @@
   },
   {
     "action": {
-      "instruction": "pay the contractor",
+      "instruction": "place a large order",
       "method": "POST",
-      "url": "https://api.examplebank.in/transfer",
+      "url": "https://api.example.com/orders",
       "params": {
         "amount": 50000,
-        "currency": "INR",
-        "beneficiary_type": "domestic"
+        "currency": "USD",
+        "destination": "internal"
       }
     },
     "outcome": "deny",
-    "rule": "small-domestic-transfer",
+    "rule": "place-order",
     "reasons": [
-      "amount: 50000 exceeds max 5000 INR"
+      "amount: 50000 exceeds max 5000 USD"
     ]
   },
   {
     "action": {
-      "instruction": "pay my electricity bill",
+      "instruction": "place a small order",
       "method": "POST",
-      "url": "https://api.examplebank.in/transfer",
+      "url": "https://api.example.com/orders",
       "params": {
         "amount": 2400,
-        "currency": "INR",
-        "beneficiary_type": "domestic"
+        "currency": "USD",
+        "destination": "internal"
       }
     },
     "outcome": "needs_approval",
-    "rule": "small-domestic-transfer",
+    "rule": "place-order",
     "reasons": [
       "amount: 2400 within max 5000",
-      "allow_list: beneficiary_type='domestic' permitted"
+      "allow_list: destination='internal' permitted"
     ]
   }
 ]

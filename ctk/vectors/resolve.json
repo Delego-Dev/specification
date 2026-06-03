@@ -3,17 +3,17 @@
     "name": "unknown approval id is denied",
     "approval": null,
     "presented_action": {
-      "instruction": "pay my electricity bill",
+      "instruction": "place a small order",
       "method": "POST",
-      "url": "https://api.examplebank.in/transfer",
+      "url": "https://api.example.com/orders",
       "params": {
         "amount": 2400,
-        "currency": "INR",
-        "beneficiary_type": "domestic"
+        "currency": "USD",
+        "destination": "internal"
       }
     },
-    "presented_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-    "presented_intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
     "expected": {
       "outcome": "deny",
       "reason_contains": "unknown approval id"
@@ -22,24 +22,24 @@
   {
     "name": "fingerprint mismatch is refused (before status)",
     "approval": {
-      "action_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-      "intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
       "status": "pending",
-      "rule": "small-domestic-transfer"
+      "rule": "place-order"
     },
     "presented_action": {
-      "instruction": "pay my electricity bill",
+      "instruction": "place a small order",
       "method": "POST",
-      "url": "https://api.examplebank.in/transfer",
+      "url": "https://api.example.com/orders",
       "params": {
         "amount": 2400,
-        "currency": "INR",
-        "beneficiary_type": "domestic",
-        "to": "attacker"
+        "currency": "USD",
+        "destination": "internal",
+        "recipient": "attacker"
       }
     },
-    "presented_fingerprint": "f8e933c3ea285c35d9b99839a59d217e6b1f5e433f198c3438555db3210b3499",
-    "presented_intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+    "presented_fingerprint": "dabddc8fc7e8fb30bdec6fb796a336b7897d4a2a12ae386727e2110d7e0e9572",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
     "expected": {
       "outcome": "deny",
       "reason_contains": "approval/action mismatch: this approval was issued for a different action (possible confused-deputy / substituted action)"
@@ -48,23 +48,23 @@
   {
     "name": "intent mismatch is refused",
     "approval": {
-      "action_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-      "intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
       "status": "approved",
-      "rule": "small-domestic-transfer"
+      "rule": "place-order"
     },
     "presented_action": {
-      "instruction": "send the deposit to my landlord",
+      "instruction": "place a different order",
       "method": "POST",
-      "url": "https://api.examplebank.in/transfer",
+      "url": "https://api.example.com/orders",
       "params": {
         "amount": 2400,
-        "currency": "INR",
-        "beneficiary_type": "domestic"
+        "currency": "USD",
+        "destination": "internal"
       }
     },
-    "presented_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-    "presented_intent_hash": "03fa5b7e3b8e6205bf83be28fa423e311676533157af96923d3bf6651087b37d",
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "70b7c5af667d7dc104bd9baaf5c26ebdabeebe69272ee013a6306e208a09c4b3",
     "expected": {
       "outcome": "deny",
       "reason_contains": "approval/intent mismatch: this approval was issued for a different instruction"
@@ -73,23 +73,23 @@
   {
     "name": "matching action while pending awaits approval",
     "approval": {
-      "action_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-      "intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
       "status": "pending",
-      "rule": "small-domestic-transfer"
+      "rule": "place-order"
     },
     "presented_action": {
-      "instruction": "pay my electricity bill",
+      "instruction": "place a small order",
       "method": "POST",
-      "url": "https://api.examplebank.in/transfer",
+      "url": "https://api.example.com/orders",
       "params": {
         "amount": 2400,
-        "currency": "INR",
-        "beneficiary_type": "domestic"
+        "currency": "USD",
+        "destination": "internal"
       }
     },
-    "presented_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-    "presented_intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
     "expected": {
       "outcome": "needs_approval",
       "reason_contains": "awaiting human approval"
@@ -98,23 +98,23 @@
   {
     "name": "human-denied action is refused",
     "approval": {
-      "action_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-      "intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
       "status": "denied",
-      "rule": "small-domestic-transfer"
+      "rule": "place-order"
     },
     "presented_action": {
-      "instruction": "pay my electricity bill",
+      "instruction": "place a small order",
       "method": "POST",
-      "url": "https://api.examplebank.in/transfer",
+      "url": "https://api.example.com/orders",
       "params": {
         "amount": 2400,
-        "currency": "INR",
-        "beneficiary_type": "domestic"
+        "currency": "USD",
+        "destination": "internal"
       }
     },
-    "presented_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-    "presented_intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
     "expected": {
       "outcome": "deny",
       "reason_contains": "human denied this action"
@@ -123,23 +123,23 @@
   {
     "name": "approved action is released once",
     "approval": {
-      "action_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-      "intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
       "status": "approved",
-      "rule": "small-domestic-transfer"
+      "rule": "place-order"
     },
     "presented_action": {
-      "instruction": "pay my electricity bill",
+      "instruction": "place a small order",
       "method": "POST",
-      "url": "https://api.examplebank.in/transfer",
+      "url": "https://api.example.com/orders",
       "params": {
         "amount": 2400,
-        "currency": "INR",
-        "beneficiary_type": "domestic"
+        "currency": "USD",
+        "destination": "internal"
       }
     },
-    "presented_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-    "presented_intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
     "expected": {
       "outcome": "allow",
       "reason_contains": "human approved by 'human'"
@@ -148,23 +148,23 @@
   {
     "name": "replay of a consumed approval is refused",
     "approval": {
-      "action_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-      "intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
       "status": "consumed",
-      "rule": "small-domestic-transfer"
+      "rule": "place-order"
     },
     "presented_action": {
-      "instruction": "pay my electricity bill",
+      "instruction": "place a small order",
       "method": "POST",
-      "url": "https://api.examplebank.in/transfer",
+      "url": "https://api.example.com/orders",
       "params": {
         "amount": 2400,
-        "currency": "INR",
-        "beneficiary_type": "domestic"
+        "currency": "USD",
+        "destination": "internal"
       }
     },
-    "presented_fingerprint": "79311ec97086b7c5107825dd198beb3c87339802d631f178ef5384d3f7c57a9e",
-    "presented_intent_hash": "cbcc6dab3a0bceb9acacf333d48ddb24d68d09a02f676d8f15dfd36e4c2b3205",
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
     "expected": {
       "outcome": "deny",
       "reason_contains": "approval already used: this single-use approval has already released its action"
