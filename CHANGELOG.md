@@ -6,7 +6,7 @@ versioned independently of the reference implementation and **leads** it: a
 behaviour is specified (marked *draft — not yet in reference*) before the
 reference implements it. See [`spec.md` §2.1](spec.md) for the version matrix.
 
-## [0.3-draft] — Unreleased
+## [0.3] — 2026-06-08 (frozen)
 
 0.3 has two tracks: a set of **additive hardening clauses** that tighten
 obligations **without changing any hashed or signed bytes** (so they MAY be
@@ -75,14 +75,22 @@ query into the `action_fingerprint` preimage) held for a later draft.
   not yet expose; **not wired** into `conformance.py`. They activate (get wired)
   at reference ≥ 0.2.3.
 
-### Deferred (0.3, draft — breaking, NOT in 0.3)
-- §4.2 — folding the URL **query string** into the `action_fingerprint` preimage.
-  This **changes the preimage** and is therefore a **breaking** change (§8.2); it
-  is intentionally **DEFERRED** to a future draft and recorded as a
-  forward-looking note only. It would bump the protocol version and ship with
-  regenerated `hashing` vectors when the reference implements it. (Earlier
-  0.3-draft notes listed this as an Added item; it is now correctly tracked as
-  deferred, and the interim defense is the additive §4.2 Broker obligation above.)
+### Added (0.3 — query fold + token hardening)
+- §4.2 — the URL **query string** is now folded into the `action_fingerprint`
+  preimage (a **breaking** change to the preimage, §8.2), with the canonicalization
+  specified exactly (percent-decoding, `+`→space, first-`=` split, duplicate
+  preservation, fragment exclusion, code-point ordering). Closes the confused-deputy
+  gap where two requests differing only in their query shared a fingerprint. The
+  `query` is fingerprint-bound but not itself policy-evaluated (policy reads
+  `params` only). The additive §4.2 Broker obligation remains the 0.2-adoptable
+  interim defense; regenerated `hashing` vectors ship when the reference implements
+  the fold.
+- §9 / §9.1 — authorization-token hardening: a verifier MUST pin `alg = EdDSA`
+  (reject `none` / algorithm confusion) and never take the algorithm or `kid` from
+  the unverified header; the token signing key SHOULD be distinct from the audit
+  key; `kid` added for rotation; `exp` MUST NOT exceed 300 s; a Broker verifying
+  across instances MUST share `jti` state; noted the token↔receipt non-linkage.
+- §11 — added algorithm-confusion and key-separation considerations.
 
 ### Fixed
 - §8.1 corrected: hash-chaining does **not** detect truncation of the most recent
@@ -112,7 +120,7 @@ query into the `action_fingerprint` preimage) held for a later draft.
 ### Changed
 - §6 — the determinism requirement now names *evaluation time* as an input
   (the `rate_limit` window), rather than implying a time-independent function.
-- Document version → 0.3-draft.
+- Document version → 0.3 (frozen).
 
 ## [0.1-draft] — initial specification
 
@@ -123,5 +131,5 @@ query into the `action_fingerprint` preimage) held for a later draft.
   §9 authorization-token draft.
 - JSON Schemas (`schema/`), CTK vectors (`ctk/`), and `validate.py`.
 
-[0.3-draft]: https://github.com/Delego-Dev/specification
+[0.3]: https://github.com/Delego-Dev/specification
 [0.1-draft]: https://github.com/Delego-Dev/specification/releases/tag/v0.1
