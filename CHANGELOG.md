@@ -22,7 +22,18 @@ reference implements it. See [`spec.md` §2.1](spec.md) for the version matrix.
   preimage, closing the confused-deputy gap where two requests differing only in
   their query share a fingerprint. A breaking change to the preimage; ships with
   updated `hashing` vectors when the reference implements it.
-- §9 retagged as the 0.3 frontier (signed authorization token; unchanged content).
+- §9 retagged as the 0.3 frontier (signed authorization token).
+- §4.2 — query canonicalization specified exactly (percent-decoding, `+`→space,
+  first-`=` split, repeat/duplicate preservation, fragment exclusion, code-point
+  ordering); clarified that policy evaluates `params` only while `query` is bound
+  by the fingerprint but is not itself policy-evaluated.
+- §9 / §9.1 — authorization-token hardening: a verifier MUST pin `alg = EdDSA`
+  (reject `none` / algorithm confusion) and never take the algorithm or `kid`
+  from the unverified header; the token key SHOULD be distinct from the audit
+  key; `kid` added to the header for rotation; `exp` MUST NOT exceed 300 s; clock
+  skew SHOULD be ≤ 60 s; a Broker verifying across instances MUST share `jti`
+  state; noted the token↔receipt non-linkage (`jti` not in the signed payload).
+- §11 — added algorithm-confusion and key-separation considerations.
 
 ### Added (0.2, now reference-backed)
 - §2.1 — a **Protocol versions** matrix (0.1 / 0.2 / 0.3) and the rule that the

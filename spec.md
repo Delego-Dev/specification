@@ -143,11 +143,25 @@ Until 0.3, an Authorizer and Broker **MUST** ensure no decision-relevant value i
 taken from the query string: a Broker **MUST NOT** forward query parameters that
 are not represented in `params`.
 
-In **0.3** the fingerprint folds the canonicalized query into its preimage:
+In **0.3** the fingerprint folds the canonicalized query into its preimage. The
+query is canonicalized as follows (NORMATIVE — query canonicalization is a
+parser-differential risk, so the steps are exact):
+
+1. Take the query component: the substring after the URL's first `?` and before
+   any `#` fragment. The fragment is **excluded**. An absent or empty query
+   yields the empty list `[]`.
+2. Split it on `&` into raw pairs; split each pair on its **first** `=` into a
+   name and a value. A pair with no `=` has the empty-string value `""`.
+3. Percent-decode the name and value per RFC 3986, additionally decoding `+` as
+   space (U+0020) — the `application/x-www-form-urlencoded` convention. The
+   result is a UTF-8 string.
+4. Represent each pair as a two-element array `[name, value]`.
+5. Sort the list by `name`, then by `value`, comparing by Unicode code point.
+   Repeated names and duplicate `[name, value]` pairs are **preserved** (never
+   de-duplicated).
 
 ```
-query = the URL query parsed into a list of [name, value] pairs,
-        sorted lexicographically by (name, value)
+query = the canonical [name, value] list produced by the steps above
 action_fingerprint = sha256(canonical_json({
   "host":   host,
   "method": uppercase(method),
@@ -156,6 +170,12 @@ action_fingerprint = sha256(canonical_json({
   "query":  query
 }))
 ```
+
+Policy constraints (§5) are evaluated against `params` **only**. The `query`
+participates in the fingerprint — binding the *executed* query to the *proposed*
+one, so a redirected Agent cannot alter it — but is **not** itself
+policy-evaluated. Decision-relevant values **MUST** therefore be carried in
+`params`, not solely in the query.
 
 This changes the fingerprint preimage and is therefore a **breaking** change
 (§8.2); it bumps the protocol version and ships with updated `hashing` CTK vectors
@@ -358,29 +378,53 @@ The token is a compact **JWS** ([RFC 7515](https://www.rfc-editor.org/rfc/rfc751
 / **JWT** ([RFC 7519](https://www.rfc-editor.org/rfc/rfc7519)) with
 `alg = EdDSA` (Ed25519, [RFC 8037](https://www.rfc-editor.org/rfc/rfc8037)).
 
-Header: `{ "alg": "EdDSA", "typ": "JWT" }`. Claims:
+Header: `{ "alg": "EdDSA", "typ": "JWT", "kid": <key id> }`. `kid` identifies the
+signing key; it **SHOULD** be present so verifiers can select the key and support
+rotation. Claims:
 
 | Claim | Meaning |
 |-------|---------|
 | `iss` | Authorizer identifier. |
 | `aud` | Intended Broker/service identifier. |
 | `iat` | Issued-at (epoch seconds). |
-| `exp` | Expiry; TTL **SHOULD** be ≤ 60 s. |
+| `exp` | Expiry (epoch seconds). TTL **SHOULD** be ≤ 60 s and **MUST NOT** exceed 300 s. |
 | `jti` | Unique token id (replay protection). |
 | `fpr` | The authorized `action_fingerprint` (§4). |
 | `iht` | The `intent_hash` (§4). |
 | `apr` | The `approval_id`, if a human approved (else omitted). |
 | `pol` | `{ "version": <policy version>, "rule": <matched rule name> }`. |
 
+**Signing key.** The token **SHOULD** be signed with a key *distinct* from the
+audit-chain signing key (§8): the two have different lifetimes and compromise
+blast radii, and a token-minting compromise **MUST NOT** be able to forge audit
+history. Where a single key is used it MUST be a deliberate deployment choice.
+Verifiers **SHOULD** resolve keys through a published key set keyed by `kid`.
+
+**Receipt correlation.** The token's `jti` is **not** part of the signed receipt
+payload (§8), so a decision receipt and the token issued alongside it are not
+cryptographically linked. An Authorizer that must correlate them **SHOULD** record
+the mapping out of band; binding `jti` into the receipt is a candidate breaking
+change (§8.2) for a future revision.
+
 ### 9.1 Broker verification (the crux)
 
 Before injecting a credential, a token-requiring Broker **MUST**:
 
-1. verify the JWS signature against the Authorizer's public key;
-2. check `exp` is in the future and `aud` matches itself (allowing small clock skew);
-3. reject a previously-seen `jti` within the token's validity window;
-4. **recompute the `action_fingerprint` of the request it is about to send and
-   require it equals `fpr`.**
+1. verify the JWS signature against the Authorizer's public key, selecting the
+   algorithm and key from its **own** configuration and **rejecting any token
+   whose header `alg` is not `EdDSA`** (in particular `none`). A verifier **MUST
+   NOT** take the algorithm — or trust a `kid` — from the unverified header to
+   decide whether or how to verify; this is the classic JWT algorithm-confusion
+   failure.
+2. check `exp` is in the future and `aud` matches itself, allowing a **bounded**
+   clock skew (**SHOULD** be ≤ 60 s);
+3. reject a previously-seen `jti` within the token's validity window. A Broker
+   that verifies across multiple instances **MUST** share the seen-`jti` set (or
+   otherwise coordinate), so a token cannot be replayed against a second instance
+   inside its window;
+4. **recompute the `action_fingerprint` of the request it is about to send — using
+   the §4.2 preimage, including the canonical query — and require it equals
+   `fpr`.**
 
 Step 4 is the point of the token: it binds the credential injection to *that
 exact action*. A token minted for action A cannot release action B, even if both
@@ -424,7 +468,15 @@ CTK vectors. The reference implements **0.2**.
 - **Fail closed** — unmatched ⇒ `default` (`deny`); a matched-but-failed
   constraint ⇒ `deny`.
 - **Token replay** — short `exp` plus `jti` tracking; tokens are bearer
-  credentials and MUST be transmitted over confidential channels.
+  credentials and MUST be transmitted over confidential channels. A token is
+  bound to one `action_fingerprint` (§9.1 step 4), so even a captured token only
+  releases the action it was minted for.
+- **Token algorithm confusion** — a verifier MUST pin `alg = EdDSA` and reject
+  `none`; the algorithm and key are chosen by verifier policy, never taken from
+  the unverified token header (§9.1).
+- **Key separation** — the token signing key SHOULD be distinct from the audit
+  signing key, so a token-minting compromise cannot also forge the audit chain
+  (§8.1, §9).
 - **Key management** — the Authorizer's Ed25519 signing key is the root of audit
   trust; its private half MUST NOT be exfiltrable. Compromise lets an attacker
   forge a chain.
