@@ -2,7 +2,7 @@
 
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-green.svg)](CONTRIBUTING.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Spec](https://img.shields.io/badge/spec-v0.3--draft-orange.svg)](spec.md)
+[![Spec](https://img.shields.io/badge/spec-v0.3-blue.svg)](spec.md)
 
 delego is a **deterministic pre-action authorization layer for AI agents**: it
 sits between an agent that proposes actions and the credential broker that

@@ -1,6 +1,6 @@
 # delego Wire Specification
 
-**Version:** 0.3 (draft) · **Status:** Draft · **License:** Apache-2.0
+**Version:** 0.3 · **Status:** Frozen · **License:** Apache-2.0
 
 This document specifies the delego protocol for **intent-bound action
 authorization**: every action an autonomous agent proposes is authorized
@@ -76,7 +76,7 @@ of this document.
 | **0.2** | reference-complete, CTK-backed | Approval & audit hardening. Approvals are additionally bound to the `intent_hash` and made **single-use** (§7); an approved action's `execution` receipt carries the rule it was parked under, so `rate_limit` counts it (§5, §8); verification treats a malformed or partial receipt as a *failure* rather than aborting the walk (§8.1). |
 | **0.3** | **draft** | Two distinct tracks. **Additive hardening clauses** — the §4.2 Broker query obligation, policy-schema validation & fail-closed (§5.1), the authorization properties P1–P4 (§7.1), head-anchoring as the required truncation defense (§8.3), and the authorization-token profile (§9) — are **additive on the 0.2 preimage**: they tighten obligations without changing any hashed/signed bytes, and **MAY** be adopted by a 0.2 implementation. **One deferred breaking item** — folding the URL query string into the `action_fingerprint` preimage (§4.2) — changes the preimage and is therefore **DEFERRED** to a future draft; it is described as a forward-looking note only and is **not** part of 0.3. |
 
-This document is at **0.3 (draft)**; the reference implements **0.2**. Clauses
+This document is **frozen at 0.3**; the reference implements **0.2**. Clauses
 introduced after 0.1 are tagged inline — *(since 0.2)* for reference-backed
 behaviour, *(0.3, draft — additive)* for the additive-hardening frontier that may
 be layered on the 0.2 preimage, and *(0.3, draft — deferred, breaking)* for the
@@ -181,14 +181,28 @@ This is an obligation on the *enforcement* point and changes no hashed or signed
 bytes; it is therefore additive on the 0.2 preimage and **MAY** be adopted by a
 0.2 implementation. See the §10 conformance line.
 
-**Deferred: folding the query into the fingerprint (breaking)** *(0.3, draft —
-deferred, breaking)*. A stronger defense is to make the query part of the
+**Folding the query into the fingerprint (NORMATIVE, 0.3 — breaking).** The
+stronger defense, normative in 0.3, makes the query part of the
 `action_fingerprint` itself, so the *decision* — not merely the Broker — is bound
-to the query:
+to the query. The fingerprint folds the canonicalized query into its preimage,
+where the query is canonicalized as follows (the steps are exact — query
+canonicalization is a parser-differential risk):
+
+1. Take the query component: the substring after the URL's first `?` and before
+   any `#` fragment. The fragment is **excluded**. An absent or empty query
+   yields the empty list `[]`.
+2. Split it on `&` into raw pairs; split each pair on its **first** `=` into a
+   name and a value. A pair with no `=` has the empty-string value `""`.
+3. Percent-decode the name and value per RFC 3986, additionally decoding `+` as
+   space (U+0020) — the `application/x-www-form-urlencoded` convention. The
+   result is a UTF-8 string.
+4. Represent each pair as a two-element array `[name, value]`.
+5. Sort the list by `name`, then by `value`, comparing by Unicode code point.
+   Repeated names and duplicate `[name, value]` pairs are **preserved** (never
+   de-duplicated).
 
 ```
-query = the URL query parsed into a list of [name, value] pairs,
-        sorted lexicographically by (name, value)
+query = the canonical [name, value] list produced by the steps above
 action_fingerprint = sha256(canonical_json({
   "host":   host,
   "method": uppercase(method),
@@ -198,11 +212,15 @@ action_fingerprint = sha256(canonical_json({
 }))
 ```
 
-This **changes the fingerprint preimage** and is therefore a **breaking** change
-(§8.2): it would bump the protocol version and ship with regenerated `hashing`
-CTK vectors. It is intentionally **DEFERRED** to a later draft and is **not** part
-of 0.3; the Broker query obligation above is the interim, additive defense. This
-note is forward-looking only.
+Policy constraints (§5) are evaluated against `params` **only**. The `query`
+participates in the fingerprint — binding the *executed* query to the *proposed*
+one, so a redirected Agent cannot alter it — but is **not** itself
+policy-evaluated. Decision-relevant values **MUST** therefore be carried in
+`params`, not solely in the query.
+
+This changes the fingerprint preimage and is therefore a **breaking** change
+(§8.2); it bumps the protocol version and ships with updated `hashing` CTK vectors
+when the reference implements it.
 
 ## 5. Policy
 
@@ -499,14 +517,16 @@ The token is a compact **JWS** ([RFC 7515](https://www.rfc-editor.org/rfc/rfc751
 / **JWT** ([RFC 7519](https://www.rfc-editor.org/rfc/rfc7519)) with
 `alg = EdDSA` (Ed25519, [RFC 8037](https://www.rfc-editor.org/rfc/rfc8037)).
 
-Header: `{ "alg": "EdDSA", "typ": "JWT" }`. Claims:
+Header: `{ "alg": "EdDSA", "typ": "JWT", "kid": <key id> }`. `kid` identifies the
+signing key; it **SHOULD** be present so verifiers can select the key and support
+rotation. Claims:
 
 | Claim | Meaning |
 |-------|---------|
 | `iss` | Authorizer identifier. |
 | `aud` | Intended Broker/service identifier. A Broker **MUST** require an **exact** match against its own identifier (no wildcard, no prefix). |
 | `iat` | Issued-at (epoch seconds). |
-| `exp` | Expiry; TTL **MUST** be ≤ 60 s after `iat`. |
+| `exp` | Expiry (epoch seconds). TTL **SHOULD** be ≤ 60 s and **MUST NOT** exceed 300 s. |
 | `jti` | Unique token id (replay protection); an Authorizer **MUST** make it unique per minting. |
 | `cns` | **Consumption nonce.** Binds the token to **one** consumption event, so the token inherits the single-use property of the authorization it carries (§7.1 P3): one `cns` authorizes one credential release. A Broker **MUST** treat `cns` as single-use and refuse a second token (or a replay) bearing a `cns` it has already consumed. |
 | `fpr` | The authorized `action_fingerprint` (§4). |
@@ -515,19 +535,41 @@ Header: `{ "alg": "EdDSA", "typ": "JWT" }`. Claims:
 | `sub` | OPTIONAL subject — the agent/session identity the authorization was issued to, for composition with an agent-identity layer (§9.3). |
 | `pol` | `{ "version": <policy version>, "rule": <matched rule name> }`. |
 
+**Signing key.** The token **SHOULD** be signed with a key *distinct* from the
+audit-chain signing key (§8): the two have different lifetimes and compromise
+blast radii, and a token-minting compromise **MUST NOT** be able to forge audit
+history. Where a single key is used it MUST be a deliberate deployment choice.
+Verifiers **SHOULD** resolve keys through a published key set keyed by `kid`.
+
+**Receipt correlation.** The token's `jti` is **not** part of the signed receipt
+payload (§8), so a decision receipt and the token issued alongside it are not
+cryptographically linked. An Authorizer that must correlate them **SHOULD** record
+the mapping out of band; binding `jti` into the receipt is a candidate breaking
+change (§8.2) for a future revision.
+
 ### 9.1 Broker verification (the crux)
 
 Before injecting a credential, a token-requiring Broker **MUST**:
 
-1. verify the JWS signature against the Authorizer's public key;
+1. verify the JWS signature against the Authorizer's public key, selecting the
+   algorithm and key from its **own** configuration and **rejecting any token
+   whose header `alg` is not `EdDSA`** (in particular `none`). A verifier **MUST
+   NOT** take the algorithm — or trust a `kid` — from the unverified header to
+   decide whether or how to verify; this is the classic JWT algorithm-confusion
+   failure;
 2. check `exp` is in the future and `aud` matches **its own identifier exactly**
-   (allowing only small, bounded clock skew on `exp`/`iat`);
-3. reject a previously-seen `jti` within the token's validity window — a Broker
-   **MUST** retain each accepted `jti` until at least the token's `exp`;
+   (no wildcard, no prefix), allowing only a **bounded** clock skew on
+   `exp`/`iat` (**SHOULD** be ≤ 60 s);
+3. reject a previously-seen `jti` within the token's validity window, retaining
+   each accepted `jti` until at least the token's `exp`; a Broker that verifies
+   across multiple instances **MUST** share the seen-`jti` set (or otherwise
+   coordinate), so a token cannot be replayed against a second instance inside
+   its window;
 4. reject a previously-consumed `cns` — one consumption nonce releases at most
    one credential (§7.1 P3);
-5. **recompute the `action_fingerprint` of the request it is about to send and
-   require it equals `fpr`.**
+5. **recompute the `action_fingerprint` of the request it is about to send —
+   using the §4.2 preimage, including the canonical query — and require it equals
+   `fpr`.**
 
 Step 5 is the point of the token: it binds the credential injection to *that
 exact action*. A token minted for action A cannot release action B, even if both
@@ -625,7 +667,14 @@ CTK vectors. The reference implements **0.2**.
   (§5.1).
 - **Token replay** — short `exp`, `jti` tracking, and single-use `cns` (§9, §9.1);
   tokens are bearer credentials and MUST be transmitted over confidential
-  channels.
+  channels. A token is bound to one `action_fingerprint` (§9.1), so even a
+  captured token only releases the action it was minted for.
+- **Token algorithm confusion** — a verifier MUST pin `alg = EdDSA` and reject
+  `none`; the algorithm and key are chosen by verifier policy, never taken from
+  the unverified token header (§9.1).
+- **Key separation** — the token signing key SHOULD be distinct from the audit
+  signing key, so a token-minting compromise cannot also forge the audit chain
+  (§8.1, §9).
 - **Key management** — the Authorizer's Ed25519 signing key is the root of audit
   trust; its private half MUST NOT be exfiltrable. Compromise lets an attacker
   forge a chain. Truncation/rollback is defended by head-anchoring (§8.3).
