@@ -169,5 +169,58 @@
       "outcome": "deny",
       "reason_contains": "approval already used: this single-use approval has already released its action"
     }
+  },
+  {
+    "name": "P1: fingerprint mismatch is refused even when approved (substitution-proof, guard before status)",
+    "property": "P1",
+    "approval": {
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+      "status": "approved",
+      "rule": "place-order"
+    },
+    "presented_action": {
+      "instruction": "place a small order",
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": {
+        "amount": 2400,
+        "currency": "USD",
+        "destination": "internal",
+        "recipient": "attacker"
+      }
+    },
+    "presented_fingerprint": "dabddc8fc7e8fb30bdec6fb796a336b7897d4a2a12ae386727e2110d7e0e9572",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "expected": {
+      "outcome": "deny",
+      "reason_contains": "approval/action mismatch: this approval was issued for a different action (possible confused-deputy / substituted action)"
+    }
+  },
+  {
+    "name": "P3: a denied approval is not resurrected by a matching action",
+    "property": "P3",
+    "approval": {
+      "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+      "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+      "status": "denied",
+      "rule": "place-order"
+    },
+    "presented_action": {
+      "instruction": "place a small order",
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": {
+        "amount": 2400,
+        "currency": "USD",
+        "destination": "internal"
+      }
+    },
+    "presented_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+    "presented_intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "expected": {
+      "outcome": "deny",
+      "reason_contains": "human denied this action"
+    }
   }
 ]

@@ -4,9 +4,11 @@
   "iat": 1759000000,
   "exp": 1759000045,
   "jti": "01JBQK9Z6X8N3M2P0R5T7V9W1Y",
+  "cns": "01JBQK9Z6X8N3M2P0R5T7V9W2Z",
   "fpr": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
   "iht": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
   "apr": "apr_4c9183f7606f",
+  "sub": "agent:onecli/session-7f3a",
   "pol": {
     "version": 1,
     "rule": "place-order"

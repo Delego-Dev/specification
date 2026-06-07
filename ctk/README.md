@@ -13,12 +13,26 @@ conformant implementation MUST reproduce it.
 | [`vectors/decisions.json`](vectors/decisions.json) | Load the example policy, evaluate each action (spec §5–§6), and match `outcome` / `rule` / `reasons`. |
 | [`vectors/chain.jsonl`](vectors/chain.jsonl) + [`vectors/chain.expected.json`](vectors/chain.expected.json) | Verify the chain (spec §8.1) using [`vectors/signing_key.pub`](vectors/signing_key.pub); it MUST be valid with the listed `seqs`. |
 | [`vectors/chain.tampered.jsonl`](vectors/chain.tampered.jsonl) + [`vectors/chain.tampered.expected.json`](vectors/chain.tampered.expected.json) | The same chain with `seq 0` edited and not re-signed; verification MUST fail with a content-hash mismatch at `seq 0`. |
-| [`vectors/resolve.json`](vectors/resolve.json) *(0.2)* | For each case, given a parked `approval` (its `action_fingerprint`, `intent_hash`, `status`, `rule`) and a `presented_action`, apply the §7 resolution rules (fingerprint guard → intent guard → status) and match `expected.outcome`; the emitted reason MUST contain `expected.reason_contains`. Exercises the confused-deputy guard, the intent guard, and single-use replay refusal. |
+| [`vectors/resolve.json`](vectors/resolve.json) *(0.2; + 0.3 §7.1 P1/P3)* | For each case, given a parked `approval` (its `action_fingerprint`, `intent_hash`, `status`, `rule`) and a `presented_action`, apply the §7 resolution rules (fingerprint guard → intent guard → status) and match `expected.outcome`; the emitted reason MUST contain `expected.reason_contains`. Exercises the confused-deputy guard, the intent guard, and single-use replay refusal — and now the §7.1 authorization properties **P1** (fingerprint mismatch refused even when `status = approved`) and **P3** (a `denied` approval is not resurrected). The P1/P3 cases carry a `"property"` tag; they are already enforced by the reference and are wired into `conformance.py`. |
 
 The policy used for the decision and chain vectors is
 [`../examples/policy.example.yaml`](../examples/policy.example.yaml). The public
 key for verifying the chain signatures is `vectors/signing_key.pub` (the private
 key is never published).
+
+## Pending vectors (documented, not yet wired)
+
+These vectors describe **0.3 additive behaviour that the current reference
+(protocol 0.2) does not yet expose**, so `conformance.py` does **not** replay them
+— wiring them now would fail against the unfixed reference. They are committed as
+documentation and **activate (get wired into `conformance.py`) when the reference
+is ≥ 0.2.3**. Each file carries its own `_status`, `_activate_at_reference`,
+`_spec`, and `_how_to_apply` keys.
+
+| File | What it will check | Activate at |
+|------|--------------------|-------------|
+| [`vectors/policy_invalid.json`](vectors/policy_invalid.json) | Policy-schema validation and **fail-closed** loading (spec §5.1): each policy is invalid (unknown `match`/`constraints` key, unknown `decision`, missing `default`); a conformant Authorizer MUST reject it and MUST NOT silently skip an unknown constraint. | reference ≥ 0.2.3 |
+| [`vectors/broker_query.json`](vectors/broker_query.json) | The Broker (PEP) **query obligation** (spec §4.2): the Broker MUST reconstruct the outgoing URL from the authorized `host`/`path`/`params`, MUST NOT forward the agent-supplied query verbatim, and MUST refuse an action whose URL it cannot reconstruct. (This is the additive obligation; folding the query into the fingerprint is a deferred breaking change and is **not** tested here.) | reference ≥ 0.2.3 |
 
 ## Schema validation
 
@@ -29,4 +43,6 @@ runs it on every change.
 ## Regenerating
 
 The vectors are fixtures produced by the reference implementation. A port in any
-language passes the CTK when it reproduces every value above.
+language passes the CTK when it reproduces every value above. The pending vectors
+above become fixtures (and get wired into `conformance.py`) once the reference
+implements the corresponding §4.2 / §5.1 behaviour at ≥ 0.2.3.

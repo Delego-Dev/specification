@@ -1,0 +1,58 @@
+{
+  "_about": "CTK vectors for spec §4.2 — the Broker (PEP) query obligation. These exercise NOT-YET-RELEASED behaviour: query reconstruction at the Broker is a 0.3 additive obligation that the current reference (protocol 0.2) does not yet expose a Broker for, so these vectors are PENDING and are NOT wired into conformance.py. Activate (wire into conformance.py) when a conformant Broker is available at reference >= 0.2.3.",
+  "_status": "pending",
+  "_activate_at_reference": ">=0.2.3",
+  "_spec": "§4.2 (Broker query obligation, additive) and §10 (0.3 additive hardening)",
+  "_how_to_apply": "For each case, the Broker has authorized the action described by `authorized.host`/`authorized.path`/`authorized.params`. The Agent presents `agent_supplied_url`. A conformant Broker MUST reconstruct the outgoing URL from the authorized host/path/params and MUST NOT forward the agent-supplied query verbatim. `expected.outgoing_url` is the URL the Broker MUST send (null when it MUST refuse). `expected.action` is `reconstruct` or `refuse`.",
+  "_note_deferred": "Folding the query into the action_fingerprint preimage is a DEFERRED breaking change (§4.2) and is NOT covered here; these vectors test only the additive Broker obligation, which changes no hashed bytes.",
+  "cases": [
+    {
+      "name": "agent-supplied query is dropped; URL reconstructed from authorized fields",
+      "property": "no-verbatim-query-forward",
+      "authorized": {
+        "method": "GET",
+        "host": "api.example.com",
+        "path": "/orders",
+        "params": {}
+      },
+      "agent_supplied_url": "https://api.example.com/orders?to=attacker&limit=100",
+      "expected": {
+        "action": "reconstruct",
+        "outgoing_url": "https://api.example.com/orders",
+        "reason_contains": "query not derivable from authorized action"
+      }
+    },
+    {
+      "name": "decision-relevant value rides the query and is not in params: dropped",
+      "property": "no-decision-relevant-from-query",
+      "authorized": {
+        "method": "POST",
+        "host": "api.example.com",
+        "path": "/orders",
+        "params": { "amount": 2400, "currency": "USD", "destination": "internal" }
+      },
+      "agent_supplied_url": "https://api.example.com/orders?destination=attacker",
+      "expected": {
+        "action": "reconstruct",
+        "outgoing_url": "https://api.example.com/orders",
+        "reason_contains": "query parameter not represented in params"
+      }
+    },
+    {
+      "name": "Broker that cannot reconstruct the URL refuses the action",
+      "property": "refuse-when-irreconstructible",
+      "authorized": {
+        "method": "GET",
+        "host": null,
+        "path": null,
+        "params": {}
+      },
+      "agent_supplied_url": "https://api.example.com/orders?to=me",
+      "expected": {
+        "action": "refuse",
+        "outgoing_url": null,
+        "reason_contains": "cannot reconstruct URL"
+      }
+    }
+  ]
+}

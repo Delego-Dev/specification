@@ -1,0 +1,100 @@
+{
+  "_about": "CTK vectors for spec §5.1 — policy-schema validation and fail-closed loading. These exercise NOT-YET-RELEASED behaviour: the current reference (protocol 0.2) does not yet validate its policy against schema/policy.json at load time, so these vectors are PENDING and are NOT wired into conformance.py. Activate (wire into conformance.py) when the reference is >= 0.2.3.",
+  "_status": "pending",
+  "_activate_at_reference": ">=0.2.3",
+  "_spec": "§5.1 (policy validation, fail-closed) and §10 (0.3 additive hardening)",
+  "_how_to_apply": "Load each `policy` into the Authorizer. A conformant >= 0.2.3 Authorizer MUST reject it (fail closed): it MUST refuse to render decisions rather than load a policy it cannot fully interpret. Equivalently, evaluating any action against the loaded policy MUST yield `deny`. The `reason`/`schema_path` fields below are the schema/policy.json locations that make each policy invalid.",
+  "cases": [
+    {
+      "name": "unknown constraint key is rejected (must not be silently skipped)",
+      "property": "fail-closed-on-unknown-constraint",
+      "policy": {
+        "version": 1,
+        "default": "deny",
+        "rules": [
+          {
+            "name": "place-order",
+            "decision": "needs_approval",
+            "match": { "method": "POST", "host": "api.example.com", "path": "/orders" },
+            "constraints": {
+              "amount": { "field": "amount", "max": 5000, "currency": "USD" },
+              "max_velocity": { "field": "amount", "per_minute": 3 }
+            }
+          }
+        ]
+      },
+      "schema_path": "$defs/constraints (additionalProperties:false) — key 'max_velocity'",
+      "expected": {
+        "valid": false,
+        "load": "reject",
+        "evaluation_outcome": "deny",
+        "reason_contains": "unknown constraint"
+      }
+    },
+    {
+      "name": "unknown match key is rejected",
+      "property": "fail-closed-on-unknown-match-key",
+      "policy": {
+        "version": 1,
+        "default": "deny",
+        "rules": [
+          {
+            "name": "read-accounts",
+            "decision": "allow",
+            "match": { "method": "GET", "host": "api.example.com", "path_prefix": "/accounts" }
+          }
+        ]
+      },
+      "schema_path": "$defs/match (additionalProperties:false) — key 'path_prefix'",
+      "expected": {
+        "valid": false,
+        "load": "reject",
+        "evaluation_outcome": "deny",
+        "reason_contains": "unknown match"
+      }
+    },
+    {
+      "name": "unknown decision value is rejected",
+      "property": "fail-closed-on-unknown-decision",
+      "policy": {
+        "version": 1,
+        "default": "deny",
+        "rules": [
+          {
+            "name": "place-order",
+            "decision": "allow_with_audit",
+            "match": { "method": "POST", "host": "api.example.com", "path": "/orders" }
+          }
+        ]
+      },
+      "schema_path": "$defs/rule/properties/decision (enum) — value 'allow_with_audit'",
+      "expected": {
+        "valid": false,
+        "load": "reject",
+        "evaluation_outcome": "deny",
+        "reason_contains": "decision"
+      }
+    },
+    {
+      "name": "missing required 'default' is rejected",
+      "property": "fail-closed-on-missing-required",
+      "policy": {
+        "version": 1,
+        "rules": [
+          {
+            "name": "read-accounts",
+            "decision": "allow",
+            "match": { "method": "GET", "host": "api.example.com", "path": "/accounts/**" }
+          }
+        ]
+      },
+      "schema_path": "required: ['default']",
+      "expected": {
+        "valid": false,
+        "load": "reject",
+        "evaluation_outcome": "deny",
+        "reason_contains": "default"
+      }
+    }
+  ]
+}
