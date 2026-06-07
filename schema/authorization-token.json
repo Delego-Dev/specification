@@ -5,16 +5,18 @@
   "description": "The decoded claim set of a delego authorization token (JWS, alg=EdDSA). See spec.md §9.",
   "type": "object",
   "additionalProperties": true,
-  "required": ["iss", "aud", "iat", "exp", "jti", "fpr", "iht"],
+  "required": ["iss", "aud", "iat", "exp", "jti", "cns", "fpr", "iht"],
   "properties": {
     "iss": { "type": "string", "description": "Authorizer identifier." },
-    "aud": { "type": "string", "description": "Intended broker/service identifier." },
+    "aud": { "type": "string", "description": "Intended broker/service identifier; the broker MUST require an exact match." },
     "iat": { "type": "integer", "description": "Issued-at (epoch seconds)." },
-    "exp": { "type": "integer", "description": "Expiry (epoch seconds); TTL SHOULD be <= 60s." },
+    "exp": { "type": "integer", "description": "Expiry (epoch seconds); TTL MUST be <= 60s after iat." },
     "jti": { "type": "string", "description": "Unique token id (replay protection)." },
+    "cns": { "type": "string", "description": "Consumption nonce: binds the token to one credential-release event (single-use). The broker MUST refuse a second token bearing a consumed cns." },
     "fpr": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Authorized action_fingerprint." },
     "iht": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "intent_hash." },
     "apr": { "type": "string", "description": "approval_id, when a human approved." },
+    "sub": { "type": "string", "description": "OPTIONAL subject: the agent/session identity the authorization was issued to, for composition with an agent-identity layer (§9.3)." },
     "pol": {
       "type": "object",
       "properties": {

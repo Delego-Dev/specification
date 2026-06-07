@@ -8,21 +8,90 @@ reference implements it. See [`spec.md` §2.1](spec.md) for the version matrix.
 
 ## [0.3-draft] — Unreleased
 
+0.3 has two tracks: a set of **additive hardening clauses** that tighten
+obligations **without changing any hashed or signed bytes** (so they MAY be
+adopted on the 0.2 preimage), and **one deferred breaking item** (folding the URL
+query into the `action_fingerprint` preimage) held for a later draft.
+
+### Repositioned
+- Abstract recast around **intent-bound action authorization**: delego is a
+  **deterministic pre-action authorization layer for AI agents** (a Policy
+  Decision Point) that answers `allow` / `needs_approval` / `deny` per action as a
+  pure function of (action, policy, audit ledger, time), bound to the action
+  fingerprint. Names the gap as **OWASP ASI03 (Excessive Agency)**.
+- §1 / README gain a one-line definition.
+- §2 names the **PDP/PEP split** explicitly (Authorizer = PDP, Broker = PEP; only
+  the Broker touches a credential) and maps `allow` / `needs_approval` / `deny`
+  onto the `ALLOW` / `REQUIRE_APPROVAL` / `DENY` triad of agent authorization
+  fabrics.
+- §11 adds: **"'Firewall' is an analogy, not the model"** — delego is an
+  action-authorization layer (a PDP), not a network firewall. "Firewall" is
+  retained only as a loose analogy.
+
+### Added (0.3, draft — additive hardening on the 0.2 preimage)
+- §4.2 — a **NORMATIVE Broker query obligation**: a Broker MUST NOT transmit any
+  query parameter not derivable from the authorized action, MUST reconstruct the
+  outgoing URL from the authorized `host`/`path`/`params` (not the agent-supplied
+  raw query), and MUST refuse an action whose URL it cannot reconstruct. Changes
+  no hashed bytes. Conformance line added to §10.
+- §5.1 — **policy validation (NORMATIVE)**: an Authorizer MUST validate its policy
+  against `schema/policy.json` and **fail closed** on an invalid policy, including
+  rejecting unknown `match`/`constraints` keys (`additionalProperties: false`); it
+  MUST NOT silently skip an unknown constraint. Conformance line added to §10.
+- §7.1 — **Authorization properties (NORMATIVE)**, four testable invariants:
+  (P1) exact-action binding / substitution-proof — fingerprint mismatch ⇒ `deny`
+  regardless of status, checked **before** status; (P2) exact-intent binding;
+  (P3) single-use — `approved → consumed` committed before the credential is
+  released, atomic, and terminal (`consumed`/`denied` never reopened);
+  (P4) no cross-approval reuse. Conformance line added to §10.
+- §8.3 — **head-anchoring as the REQUIRED truncation/rollback defense**: defines
+  the external head anchor `(seq, entry_hash)`; an Authorizer advertising
+  rollback-resistance MUST maintain it; an Auditor with an anchor MUST reject a
+  mismatched head; an Auditor with **no** anchor MUST report that truncation
+  cannot be ruled out rather than an unqualified "valid". The §8.1 caveat now
+  points to §8.3.
+- §5 / §11 — the `rate_limit` **consistency class** is stated: **exact** only
+  under a serialized single-writer ledger, **best-effort** under concurrent
+  writers; an implementation MUST document which it provides.
+- §9 — the **authorization token** is recast as an **OPTIONAL PROFILE** (a
+  portable PDP→PEP decision artifact), not the protocol's load-bearing control.
+  Adds a `cns` (consumption nonce) claim binding the token to one credential
+  release (single-use inheritance); tightens `aud` (exact match), issuance
+  (TTL ≤ 60 s, unique `jti`, only for `allow`/released approval), and replay
+  (Broker retains `jti` until `exp`, refuses a consumed `cns`). New **§9.2
+  Revocation** (expiry primary; optional revocation list) and **§9.3 Interop**
+  (PDP→PEP artifact; composes with an agent-passport / identity layer via the
+  optional `sub` claim; maps onto `ALLOW` / `REQUIRE_APPROVAL` / `DENY`).
+- `schema/authorization-token.json` — adds `cns` (string, **required**) and an
+  optional `sub` (string); the example token and its markdown are updated to match.
+
+### Added (0.3, draft — CTK)
+- `ctk/vectors/resolve.json` — two new **wired** cases for §7.1: **P1**
+  (fingerprint mismatch refused even when `status = approved`) and **P3** (a
+  `denied` approval is not resurrected). The current reference already enforces
+  both, so they are replayed by `conformance.py`.
+- `ctk/vectors/policy_invalid.json` and `ctk/vectors/broker_query.json` — new
+  **pending** vectors documenting the §5.1 and §4.2 behaviour the reference does
+  not yet expose; **not wired** into `conformance.py`. They activate (get wired)
+  at reference ≥ 0.2.3.
+
+### Deferred (0.3, draft — breaking, NOT in 0.3)
+- §4.2 — folding the URL **query string** into the `action_fingerprint` preimage.
+  This **changes the preimage** and is therefore a **breaking** change (§8.2); it
+  is intentionally **DEFERRED** to a future draft and recorded as a
+  forward-looking note only. It would bump the protocol version and ship with
+  regenerated `hashing` vectors when the reference implements it. (Earlier
+  0.3-draft notes listed this as an Added item; it is now correctly tracked as
+  deferred, and the interim defense is the additive §4.2 Broker obligation above.)
+
 ### Fixed
 - §8.1 corrected: hash-chaining does **not** detect truncation of the most recent
   receipts (a truncated prefix verifies clean), nor a holder of the local signing
-  key. Added a normative caveat requiring external head anchoring for rollback
-  detection — the prior "deleting any receipt breaks a check" claim was wrong.
+  key. The normative requirement to anchor the head externally now lives in §8.3;
+  the prior "deleting any receipt breaks a check" claim was wrong.
 - Version notation normalised to the `0.x` scheme everywhere (spec/protocol is
-  `0.x`; the reference *package* is `0.x.y`). `conformance.py` now parses a
+  `0.x`; the reference *package* is `0.x.y`). `conformance.py` parses a
   two-component spec version.
-
-### Added (0.3, draft — not yet in reference)
-- §4.2 — the URL **query string** is folded into the `action_fingerprint`
-  preimage, closing the confused-deputy gap where two requests differing only in
-  their query share a fingerprint. A breaking change to the preimage; ships with
-  updated `hashing` vectors when the reference implements it.
-- §9 retagged as the 0.3 frontier (signed authorization token; unchanged content).
 
 ### Added (0.2, now reference-backed)
 - §2.1 — a **Protocol versions** matrix (0.1 / 0.2 / 0.3) and the rule that the
