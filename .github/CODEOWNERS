@@ -1,0 +1,3 @@
+# delego specification — the spec lead reviews all changes to the protocol.
+# Enforced via branch protection (require review from Code Owners).
+* @koishore
