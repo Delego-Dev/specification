@@ -161,7 +161,9 @@ order {…, recipient:"attacker"}    (one param added)
   → dabddc8fc7e8fb30bdec6fb796a336b7897d4a2a12ae386727e2110d7e0e9572
 ```
 
-See [`ctk/vectors/hashing.json`](../ctk/vectors/hashing.json) for the full set.
+See [`ctk/vectors/hashing-v0.2.json`](../ctk/vectors/hashing-v0.2.json) for the
+full set on this version's preimage (0.1 and 0.2 share it; `hashing.json` is
+generated on the 0.3 preimage, which folds the URL query into the fingerprint).
 
 ### 4.2 Query string
 
