@@ -1,47 +1,119 @@
 [
-  {
-    "action": {
-      "instruction": "read my account details",
-      "method": "GET",
-      "url": "https://api.example.com/accounts/me",
-      "params": {}
-    },
-    "intent_canonical_json": "{\"instruction\":\"read my account details\"}",
-    "intent_hash": "ec949034e985a92f3bcd9f9ab8313a80005157698f748f2b8df6163c04af4619",
-    "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"GET\",\"params\":{},\"path\":\"/accounts/me\"}",
-    "action_fingerprint": "497e02606ea157ca8ca885cbbd33d1a8a70c40fdaf6f15c5154d858f870b8b61"
+ {
+  "action": {
+   "instruction": "read my account details",
+   "method": "GET",
+   "url": "https://api.example.com/accounts/me",
+   "params": {}
   },
-  {
-    "action": {
-      "instruction": "place a small order",
-      "method": "POST",
-      "url": "https://api.example.com/orders",
-      "params": {
-        "amount": 2400,
-        "currency": "USD",
-        "destination": "internal"
-      }
-    },
-    "intent_canonical_json": "{\"instruction\":\"place a small order\"}",
-    "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
-    "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"currency\":\"USD\",\"destination\":\"internal\"},\"path\":\"/orders\"}",
-    "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394"
+  "intent_canonical_json": "{\"instruction\":\"read my account details\"}",
+  "intent_hash": "ec949034e985a92f3bcd9f9ab8313a80005157698f748f2b8df6163c04af4619",
+  "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"GET\",\"params\":{},\"path\":\"/accounts/me\",\"query\":[]}",
+  "action_fingerprint": "051bae652ac13aa7eda6389a289e084c3414f9cd2b229544a679b47b21003d06"
+ },
+ {
+  "action": {
+   "instruction": "place a small order",
+   "method": "POST",
+   "url": "https://api.example.com/orders",
+   "params": {
+    "amount": 2400,
+    "currency": "USD",
+    "destination": "internal"
+   }
   },
-  {
-    "action": {
-      "instruction": "place a small order",
-      "method": "POST",
-      "url": "https://api.example.com/orders",
-      "params": {
-        "amount": 2400,
-        "currency": "USD",
-        "destination": "internal",
-        "recipient": "attacker"
-      }
-    },
-    "intent_canonical_json": "{\"instruction\":\"place a small order\"}",
-    "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
-    "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"currency\":\"USD\",\"destination\":\"internal\",\"recipient\":\"attacker\"},\"path\":\"/orders\"}",
-    "action_fingerprint": "dabddc8fc7e8fb30bdec6fb796a336b7897d4a2a12ae386727e2110d7e0e9572"
-  }
+  "intent_canonical_json": "{\"instruction\":\"place a small order\"}",
+  "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+  "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"currency\":\"USD\",\"destination\":\"internal\"},\"path\":\"/orders\",\"query\":[]}",
+  "action_fingerprint": "4327df2637072bf058622d1f8baea6e431726f7332a50cd12ec970d6e43c2fd2"
+ },
+ {
+  "action": {
+   "instruction": "place a small order",
+   "method": "POST",
+   "url": "https://api.example.com/orders",
+   "params": {
+    "amount": 2400,
+    "currency": "USD",
+    "destination": "internal",
+    "recipient": "attacker"
+   }
+  },
+  "intent_canonical_json": "{\"instruction\":\"place a small order\"}",
+  "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+  "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"currency\":\"USD\",\"destination\":\"internal\",\"recipient\":\"attacker\"},\"path\":\"/orders\",\"query\":[]}",
+  "action_fingerprint": "43aa4af8115a932a72f30da058b7396427a6f69f98cffbe4df8ce78017b89123"
+ },
+ {
+  "action": {
+   "instruction": "send the report to me",
+   "method": "GET",
+   "url": "https://api.example.com/orders?to=me",
+   "params": {}
+  },
+  "intent_canonical_json": "{\"instruction\":\"send the report to me\"}",
+  "intent_hash": "100c07cd4a1894eddb1e8555d2ff02ab29400c35d5423aeb774a3fcf59c8dbca",
+  "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"GET\",\"params\":{},\"path\":\"/orders\",\"query\":[[\"to\",\"me\"]]}",
+  "action_fingerprint": "ec173d46a061224eb08f43e87082d5b2efde197b6d242400825cc224367b2b7d"
+ },
+ {
+  "action": {
+   "instruction": "send the report to me",
+   "method": "GET",
+   "url": "https://api.example.com/orders?to=attacker",
+   "params": {}
+  },
+  "intent_canonical_json": "{\"instruction\":\"send the report to me\"}",
+  "intent_hash": "100c07cd4a1894eddb1e8555d2ff02ab29400c35d5423aeb774a3fcf59c8dbca",
+  "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"GET\",\"params\":{},\"path\":\"/orders\",\"query\":[[\"to\",\"attacker\"]]}",
+  "action_fingerprint": "d9ca2a6ac18ceb39d3000eadbe8f2675637844248e8156053d75704b50a06dd7"
+ },
+ {
+  "action": {
+   "instruction": "query encodings canonicalize",
+   "method": "GET",
+   "url": "https://api.example.com/search?b=two%20words&a=1",
+   "params": {}
+  },
+  "intent_canonical_json": "{\"instruction\":\"query encodings canonicalize\"}",
+  "intent_hash": "c9fef02508a098826101ba4c03887fe287a4776d50ce05a994931fc5797ff220",
+  "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"GET\",\"params\":{},\"path\":\"/search\",\"query\":[[\"a\",\"1\"],[\"b\",\"two words\"]]}",
+  "action_fingerprint": "5fbb7320cd61de0a9dc99aa83d30bdf7332aa2819dd381a84c8c0287bd60408f"
+ },
+ {
+  "action": {
+   "instruction": "query encodings canonicalize",
+   "method": "GET",
+   "url": "https://api.example.com/search?a=1&b=two+words",
+   "params": {}
+  },
+  "intent_canonical_json": "{\"instruction\":\"query encodings canonicalize\"}",
+  "intent_hash": "c9fef02508a098826101ba4c03887fe287a4776d50ce05a994931fc5797ff220",
+  "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"GET\",\"params\":{},\"path\":\"/search\",\"query\":[[\"a\",\"1\"],[\"b\",\"two words\"]]}",
+  "action_fingerprint": "5fbb7320cd61de0a9dc99aa83d30bdf7332aa2819dd381a84c8c0287bd60408f"
+ },
+ {
+  "action": {
+   "instruction": "duplicates and valueless pairs are preserved",
+   "method": "GET",
+   "url": "https://api.example.com/x?b=2&a=%41&a=plus+space&a&b=2",
+   "params": {}
+  },
+  "intent_canonical_json": "{\"instruction\":\"duplicates and valueless pairs are preserved\"}",
+  "intent_hash": "a8389be669dbdf47c06358e5c6fdf5defdd387e361169c3cdadfd8325f66dda7",
+  "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"GET\",\"params\":{},\"path\":\"/x\",\"query\":[[\"a\",\"\"],[\"a\",\"A\"],[\"a\",\"plus space\"],[\"b\",\"2\"],[\"b\",\"2\"]]}",
+  "action_fingerprint": "9ec8f7e43e3c672ba6426089b2a7bfa37e363e7e7a6c4cf7ea581391568614d4"
+ },
+ {
+  "action": {
+   "instruction": "the fragment is excluded",
+   "method": "GET",
+   "url": "https://api.example.com/x?a=1#b=2",
+   "params": {}
+  },
+  "intent_canonical_json": "{\"instruction\":\"the fragment is excluded\"}",
+  "intent_hash": "8ab001b912f8875f409f9127e58f19bc3ea85521d1e98a6195b1fa92592fd20a",
+  "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"GET\",\"params\":{},\"path\":\"/x\",\"query\":[[\"a\",\"1\"]]}",
+  "action_fingerprint": "ff48ebc3cfcc763175f753a3963f103a0515cd50592e7027ec3afb26c91a15a1"
+ }
 ]

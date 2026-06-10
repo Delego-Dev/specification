@@ -1,0 +1,47 @@
+[
+  {
+    "action": {
+      "instruction": "read my account details",
+      "method": "GET",
+      "url": "https://api.example.com/accounts/me",
+      "params": {}
+    },
+    "intent_canonical_json": "{\"instruction\":\"read my account details\"}",
+    "intent_hash": "ec949034e985a92f3bcd9f9ab8313a80005157698f748f2b8df6163c04af4619",
+    "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"GET\",\"params\":{},\"path\":\"/accounts/me\"}",
+    "action_fingerprint": "497e02606ea157ca8ca885cbbd33d1a8a70c40fdaf6f15c5154d858f870b8b61"
+  },
+  {
+    "action": {
+      "instruction": "place a small order",
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": {
+        "amount": 2400,
+        "currency": "USD",
+        "destination": "internal"
+      }
+    },
+    "intent_canonical_json": "{\"instruction\":\"place a small order\"}",
+    "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"currency\":\"USD\",\"destination\":\"internal\"},\"path\":\"/orders\"}",
+    "action_fingerprint": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394"
+  },
+  {
+    "action": {
+      "instruction": "place a small order",
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": {
+        "amount": 2400,
+        "currency": "USD",
+        "destination": "internal",
+        "recipient": "attacker"
+      }
+    },
+    "intent_canonical_json": "{\"instruction\":\"place a small order\"}",
+    "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "fingerprint_canonical_json": "{\"host\":\"api.example.com\",\"method\":\"POST\",\"params\":{\"amount\":2400,\"currency\":\"USD\",\"destination\":\"internal\",\"recipient\":\"attacker\"},\"path\":\"/orders\"}",
+    "action_fingerprint": "dabddc8fc7e8fb30bdec6fb796a336b7897d4a2a12ae386727e2110d7e0e9572"
+  }
+]
