@@ -6,6 +6,18 @@ versioned independently of the reference implementation and **leads** it: a
 behaviour is specified (marked *draft — not yet in reference*) before the
 reference implements it. See [`spec.md` §2.1](spec.md) for the version matrix.
 
+## [Unreleased]
+
+### Added (editorial — no protocol change)
+- `versions/` — standalone documents of record for prior protocol versions:
+  [`versions/spec-v0.1.md`](versions/spec-v0.1.md) and
+  [`versions/spec-v0.2.md`](versions/spec-v0.2.md), backfilled retroactively
+  from the frozen v0.3 `spec.md` by removing clauses tagged above each target
+  version. Descriptive snapshots only: section numbering matches `spec.md`
+  (later-version sections stubbed with pointers), normative content is defined
+  exclusively in `spec.md`. README links them; its stale "v0.3 — draft" status
+  corrected to "frozen".
+
 ## [0.3] — 2026-06-08 (frozen)
 
 0.3 has two tracks: a set of **additive hardening clauses** that tighten

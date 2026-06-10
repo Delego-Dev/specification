@@ -76,8 +76,11 @@ reproduce them; see [§10 Conformance](spec.md#10-conformance).
 
 ## Status & versioning
 
-**v0.3 — draft.** The spec/protocol is versioned `0.x` (the reference *package*
-is `0.x.y`). 0.1–0.2 are reference-backed. 0.3 adds **additive hardening clauses**
+**v0.3 — frozen.** The spec/protocol is versioned `0.x` (the reference *package*
+is `0.x.y`). 0.1–0.2 are reference-backed; each prior protocol version has a
+standalone document of record in [`versions/`](versions/README.md)
+([0.1](versions/spec-v0.1.md), [0.2](versions/spec-v0.2.md) — what the reference
+implements today). 0.3 adds **additive hardening clauses**
 — the §4.2 Broker query obligation, policy-schema validation (§5.1), the
 authorization properties P1–P4 (§7.1), head-anchoring (§8.3), and the
 authorization-token profile (§9) — which tighten obligations **without changing
