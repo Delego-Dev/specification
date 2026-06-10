@@ -493,10 +493,12 @@ anchor is advanced as the chain grows.
 
 See the §10 conformance line.
 
-## 9. Authorization Token (OPTIONAL PROFILE) *(0.3, draft — not yet in reference)*
+## 9. Authorization Token (OPTIONAL PROFILE) *(0.3 — reference-backed since delego 0.3.3)*
 
-> **Status: draft, not yet implemented in the reference.** This section defines
-> an **optional profile** layered on the 0.2 preimage. The token is **not** the
+> **Status: reference-backed (optional profile).** The reference implements this
+> profile from **delego 0.3.3**; its verifier reproduces the
+> [`ctk/vectors/token.json`](ctk/vectors/token.json) vectors (§10). This section
+> defines an **optional profile** layered on the 0.2 preimage. The token is **not** the
 > protocol's load-bearing control — the load-bearing controls are the
 > deterministic decision (§6), the fingerprint/intent binding and single-use
 > approval (§7, §7.1), the audit chain (§8), and the PDP/PEP split (§2) in which

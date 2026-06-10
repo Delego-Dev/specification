@@ -146,6 +146,35 @@ if tvalid == texp["valid"] and tprobs == texp["problems"]:
 else:
     fail(f"tampered chain: got valid={tvalid} problems={tprobs}")
 
+# --- §9 authorization token (optional profile, reference >= 0.3.3) ------------ #
+# The reference implements the §9 token profile from 0.3.3; replay the verifier
+# vectors. Skipped (not failed) on an older reference that lacks verify_token.
+try:
+    from delego.token import TokenError, verify_token
+except ImportError:
+    print("token (§9): reference < 0.3.3 — token profile not implemented, skipping")
+else:
+    print("token (§9 / §9.1):")
+    from cryptography.hazmat.primitives import serialization as _ser
+
+    _pub = _ser.load_pem_public_key((VEC / "token_signing_key.pub").read_bytes())
+    _tok = json.loads((VEC / "token.json").read_text())
+    _leeway = _tok.get("_leeway_seconds", 60)
+    for c in _tok["cases"]:
+        try:
+            claims = verify_token(
+                c["token"], public_key=_pub, audience=c["audience"], now=c["now"], leeway=_leeway
+            )
+            got = "accept"
+        except TokenError:
+            claims, got = None, "reject"
+        if got != c["expect"]:
+            fail(f"token: {c['name']}: got {got}, want {c['expect']}")
+        elif got == "accept" and not all(claims.get(k) == v for k, v in c.get("expected_claims", {}).items()):
+            fail(f"token: {c['name']}: claims mismatch")
+        else:
+            ok(f"{got:6} {c['name']}")
+
 print()
 if fails:
     print(f"{fails} conformance failure(s) — reference does not match the spec's CTK.")
