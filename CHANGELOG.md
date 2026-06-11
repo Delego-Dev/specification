@@ -8,6 +8,33 @@ reference implements it. See [`spec.md` §2.1](spec.md) for the version matrix.
 
 ## [Unreleased]
 
+### Fixed (spec prose — status bookkeeping caught up with the 0.3.0 query-fold)
+- `spec.md` had not been updated when the reference shipped the §4.2 query-fold
+  (delego 0.3.0, CTK regenerated in #9) and contradicted itself: §2.1's version
+  table and tag legend, the §10 preamble, and the §10 "deferred (breaking)"
+  block still called the query-fold *deferred / not part of 0.3* and said *"the
+  reference implements 0.2"*, while §4.2 (normative), the CTK README, and
+  `conformance.py` all treat the fold as 0.3 and reference-backed. All status
+  prose now states: the reference implements **0.3**; the query-fold is the 0.3
+  **breaking** conformance line with `hashing.json` wired (≤ 0.2 preimage
+  implementations use `hashing-v0.2.json` and the §4.2 Broker query obligation,
+  which the fold supersedes on the 0.3 preimage). Inline *(0.3, draft —
+  additive)* tags became *(0.3 — additive)*. **No normative design text
+  changed** — same precedent as #11's §9 status flip.
+- §4.1 worked example regenerated on the 0.3 preimage (the shown canonical JSON
+  now carries `"query":[]`; all three fingerprints updated to match
+  `ctk/vectors/hashing.json`).
+- §10 token line now quotes §9's actual TTL rule (SHOULD ≤ 60 s, MUST NOT
+  exceed 300 s) instead of "≤ 60 s `exp`".
+- `examples/authorization-token.{md,json}`: dropped the stale "not yet minted by
+  the reference" note (reference-backed since 0.3.3, #11) and updated `fpr` to
+  the place-order's 0.3 fingerprint so the example again matches
+  `ctk/vectors/hashing.json` as its prose claims.
+- `README.md` "Status & versioning" rewritten to the same state (reference
+  implements 0.3; query-fold is the 0.3 breaking track, not deferred). Repaired
+  `spec.md` anchor links: the §7.1 link tracks the retagged heading, and the two
+  §9 links broken since #11's heading change now point at the current slug.
+
 ### Changed (§9 authorization token — now reference-backed)
 - The reference implements the **§9 authorization-token profile** as of
   **delego 0.3.3**. §9's status flips from *draft / not yet in reference* to

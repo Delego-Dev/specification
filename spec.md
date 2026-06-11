@@ -74,13 +74,13 @@ of this document.
 |---------|--------|------|
 | **0.1** | reference-complete, CTK-backed | Canonical JSON (§3); intent hash + action fingerprint (§4); deterministic policy & decision, first-match-wins, fail-closed (§5–§6); fingerprint-bound approval / confused-deputy guard (§7); append-only, hash-linked, Ed25519-signed audit chain + verification (§8). |
 | **0.2** | reference-complete, CTK-backed | Approval & audit hardening. Approvals are additionally bound to the `intent_hash` and made **single-use** (§7); an approved action's `execution` receipt carries the rule it was parked under, so `rate_limit` counts it (§5, §8); verification treats a malformed or partial receipt as a *failure* rather than aborting the walk (§8.1). |
-| **0.3** | **draft** | Two distinct tracks. **Additive hardening clauses** — the §4.2 Broker query obligation, policy-schema validation & fail-closed (§5.1), the authorization properties P1–P4 (§7.1), head-anchoring as the required truncation defense (§8.3), and the authorization-token profile (§9) — are **additive on the 0.2 preimage**: they tighten obligations without changing any hashed/signed bytes, and **MAY** be adopted by a 0.2 implementation. **One deferred breaking item** — folding the URL query string into the `action_fingerprint` preimage (§4.2) — changes the preimage and is therefore **DEFERRED** to a future draft; it is described as a forward-looking note only and is **not** part of 0.3. |
+| **0.3** | reference-complete, CTK-backed | Two distinct tracks. **Additive hardening clauses** — the §4.2 Broker query obligation (≤ 0.2 preimage), policy-schema validation & fail-closed (§5.1), the authorization properties P1–P4 (§7.1), head-anchoring as the required truncation defense (§8.3), and the authorization-token profile (§9, reference-backed since delego 0.3.3) — are **additive on the 0.2 preimage**: they tighten obligations without changing any hashed/signed bytes, and **MAY** be adopted by a 0.2 implementation. **One breaking change** — folding the canonicalized URL query into the `action_fingerprint` preimage (§4.2) — changes every fingerprint; it is reference-backed since delego 0.3.0, with the `hashing` CTK vectors regenerated on the 0.3 preimage (the 0.2 preimage is preserved as `hashing-v0.2.json`). |
 
-This document is **frozen at 0.3**; the reference implements **0.2**. Clauses
-introduced after 0.1 are tagged inline — *(since 0.2)* for reference-backed
-behaviour, *(0.3, draft — additive)* for the additive-hardening frontier that may
-be layered on the 0.2 preimage, and *(0.3, draft — deferred, breaking)* for the
-query-fold that changes the preimage and is held for a later draft.
+This document is **frozen at 0.3**; the reference implements **0.3** (since
+delego 0.3.0; the §9 token profile since 0.3.3). Clauses introduced after 0.1
+are tagged inline — *(since 0.2)* for 0.2 behaviour, *(0.3 — additive)* for the
+additive-hardening clauses that may be layered on the 0.2 preimage, and
+*(NORMATIVE, 0.3 — breaking)* for the query-fold that changes the preimage.
 
 ## 3. Canonicalization (NORMATIVE)
 
@@ -139,20 +139,23 @@ For `GET https://api.example.com/accounts/me`, instruction `"read my account det
 
 ```
 canonical_json for fingerprint:
-{"host":"api.example.com","method":"GET","params":{},"path":"/accounts/me"}
+{"host":"api.example.com","method":"GET","params":{},"path":"/accounts/me","query":[]}
 
 intent_hash        = ec949034e985a92f3bcd9f9ab8313a80005157698f748f2b8df6163c04af4619
-action_fingerprint = 497e02606ea157ca8ca885cbbd33d1a8a70c40fdaf6f15c5154d858f870b8b61
+action_fingerprint = 051bae652ac13aa7eda6389a289e084c3414f9cd2b229544a679b47b21003d06
 ```
+
+(`query` is the canonicalized URL query per §4.2 — `[]` for a bare URL. On the
+≤ 0.2 preimage the key is absent; see `ctk/vectors/hashing-v0.2.json`.)
 
 Adding one parameter changes the fingerprint completely — this is what makes the
 confused-deputy guard (§7) work:
 
 ```
 order {amount:2400,currency:USD,destination:internal}
-  → c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394
+  → 4327df2637072bf058622d1f8baea6e431726f7332a50cd12ec970d6e43c2fd2
 order {…, recipient:"attacker"}    (one param added)
-  → dabddc8fc7e8fb30bdec6fb796a336b7897d4a2a12ae386727e2110d7e0e9572
+  → 43aa4af8115a932a72f30da058b7396427a6f69f98cffbe4df8ce78017b89123
 ```
 
 See [`ctk/vectors/hashing.json`](ctk/vectors/hashing.json) for the full set.
@@ -165,9 +168,9 @@ fingerprint**. Two requests that differ only in their query (e.g.
 `/orders?to=me` vs `/orders?to=attacker`) therefore share one fingerprint —
 a confused-deputy gap if decision-relevant data rides the query.
 
-**Broker query obligation (NORMATIVE)** *(0.3, draft — additive)*. Because the
-query is outside the fingerprint preimage, the Broker (PEP) **MUST** neutralise
-it at enforcement time rather than trusting it:
+**Broker query obligation (NORMATIVE)** *(0.3 — additive, ≤ 0.2 preimage)*. On
+the ≤ 0.2 preimage the query is outside the fingerprint, so the Broker (PEP)
+**MUST** neutralise it at enforcement time rather than trusting it:
 
 - A Broker **MUST NOT** transmit any query parameter to the Service that is not
   derivable from the authorized action.
@@ -179,7 +182,9 @@ it at enforcement time rather than trusting it:
 
 This is an obligation on the *enforcement* point and changes no hashed or signed
 bytes; it is therefore additive on the 0.2 preimage and **MAY** be adopted by a
-0.2 implementation. See the §10 conformance line.
+0.2 implementation. On the 0.3 preimage the query-fold below supersedes it: the
+whole query of an authorized action is fingerprint-bound, so the Broker forwards
+it and refuses only a `#fragment`. See the §10 conformance line.
 
 **Folding the query into the fingerprint (NORMATIVE, 0.3 — breaking).** The
 stronger defense, normative in 0.3, makes the query part of the
@@ -219,8 +224,9 @@ policy-evaluated. Decision-relevant values **MUST** therefore be carried in
 `params`, not solely in the query.
 
 This changes the fingerprint preimage and is therefore a **breaking** change
-(§8.2); it bumps the protocol version and ships with updated `hashing` CTK vectors
-when the reference implements it.
+(§8.2); it bumped the protocol version to 0.3 and shipped with the `hashing` CTK
+vectors regenerated on the 0.3 preimage when the reference implemented it
+(delego 0.3.0). The 0.2-preimage vectors are preserved as `hashing-v0.2.json`.
 
 ## 5. Policy
 
@@ -261,7 +267,7 @@ an empty match matches nothing.
   time; an action parked for approval is counted only once released, so several
   actions parked before any release MAY each execute even past `max`.
 
-  **Consistency class (NORMATIVE)** *(0.3, draft — additive)*. The `rate_limit`
+  **Consistency class (NORMATIVE)** *(0.3 — additive)*. The `rate_limit`
   count is **exact** only under a **serialized single-writer** audit ledger:
   every counted receipt is committed before the next decision reads the window.
   Under **concurrent writers** the count is **best-effort** — two decisions may
@@ -275,7 +281,7 @@ an empty match matches nothing.
 > and both span `/`. Per-segment globbing is a planned refinement; a conformant
 > v0.1 implementation MUST reproduce the coarse behavior.
 
-### 5.1 Policy validation (NORMATIVE) *(0.3, draft — additive)*
+### 5.1 Policy validation (NORMATIVE) *(0.3 — additive)*
 
 Before evaluating any action, an Authorizer **MUST** validate its policy
 document against [`schema/policy.json`](schema/policy.json) and **fail closed** on
@@ -361,7 +367,7 @@ Every refusal in this section **MUST** be recorded as an `execution`/`deny`
 receipt (§8). Authoritative vectors:
 [`ctk/vectors/resolve.json`](ctk/vectors/resolve.json).
 
-### 7.1 Authorization properties (NORMATIVE) *(0.3, draft — additive)*
+### 7.1 Authorization properties (NORMATIVE) *(0.3 — additive)*
 
 The §7 guards above and the §8 audit chain together provide four testable
 authorization invariants. A conformant Authorizer **MUST** uphold all four; they
@@ -466,7 +472,7 @@ The set of payload fields is part of the wire format. Any change to it is a
 **breaking** change: it MUST bump this specification's version and the receipt
 `schema` version together, or previously-signed chains stop verifying.
 
-### 8.3 Head-anchoring (NORMATIVE) *(0.3, draft — additive)*
+### 8.3 Head-anchoring (NORMATIVE) *(0.3 — additive)*
 
 Head-anchoring is the **REQUIRED** defense against truncation and rollback (the
 §8.1 caveat). It changes no hashed or signed bytes — it adds a small commitment
@@ -609,7 +615,7 @@ or `deny` outcome represents `REQUIRE_APPROVAL` / `DENY`.
 
 An implementation declares the highest protocol version (§2.1) it implements, and
 **MUST** satisfy every clause at or below that version and reproduce that version's
-CTK vectors. The reference implements **0.2**.
+CTK vectors. The reference implements **0.3**.
 
 **0.1**
 - A conformant **Authorizer** MUST implement §3–§8 and reproduce the CTK
@@ -627,10 +633,12 @@ CTK vectors. The reference implements **0.2**.
 
 **0.3 — additive hardening** (additive on the 0.2 preimage; MAY be adopted by a
 0.2 implementation)
-- A **Broker** MUST satisfy the §4.2 query obligation: it MUST reconstruct the
-  outgoing URL from the authorized `host`/`path`/`params`, MUST NOT forward the
-  agent-supplied query verbatim or any query parameter not derivable from the
-  authorized action, and MUST refuse an action whose URL it cannot reconstruct.
+- A **Broker** on the ≤ 0.2 preimage MUST satisfy the §4.2 query obligation: it
+  MUST reconstruct the outgoing URL from the authorized `host`/`path`/`params`,
+  MUST NOT forward the agent-supplied query verbatim or any query parameter not
+  derivable from the authorized action, and MUST refuse an action whose URL it
+  cannot reconstruct. (On the 0.3 preimage the query-fold supersedes this: the
+  query is fingerprint-bound, and the Broker refuses only a `#fragment`.)
 - An **Authorizer** MUST validate its policy against `schema/policy.json` and fail
   closed on an invalid policy, including rejecting unknown `match`/`constraints`
   keys, and MUST NOT skip an unknown constraint (§5.1).
@@ -641,15 +649,17 @@ CTK vectors. The reference implements **0.2**.
   an **Auditor** MUST reject a chain that does not match a held anchor and MUST
   report that truncation cannot be ruled out when it holds no anchor (§8.3).
 - An **Authorizer/Broker** that participates in the authorization-token profile
-  MUST implement §9 / §9.1 (exact `aud`, ≤ 60 s `exp`, unique `jti`, single-use
-  `cns`, fingerprint re-check).
+  MUST implement §9 / §9.1 (exact `aud`; short `exp` — SHOULD ≤ 60 s, MUST NOT
+  exceed 300 s; unique `jti`; single-use `cns`; fingerprint re-check).
 - An implementation MUST document the `rate_limit` consistency class it provides
   (§5, §11).
 
-**0.3 — deferred (breaking)**
-- Folding the URL query into the `action_fingerprint` preimage (§4.2) is a
-  **breaking** change held for a future draft; it is **not** required by 0.3 and
-  has no CTK vector wired against the current reference.
+**0.3 — breaking**
+- An **Authorizer** MUST fold the canonicalized URL query into the
+  `action_fingerprint` preimage (§4.2) and reproduce the CTK `hashing` vectors
+  (0.3 preimage; reference-backed since delego 0.3.0). An implementation that
+  remains on the ≤ 0.2 preimage checks itself against `hashing-v0.2.json` and is
+  subject to the §4.2 Broker query obligation instead.
 
 ## 11. Security considerations
 
