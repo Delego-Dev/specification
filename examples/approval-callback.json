@@ -1,0 +1,23 @@
+{
+  "_note": "Illustrative (spec.md §7.3, draft 0.4). The notification delivers a parked approval to a human surface; the decision callback resolves it. Validated against schema/approval-callback.json#/$defs/notification and #/$defs/decision. Signature is a placeholder.",
+  "notification": {
+    "approval_id": "apr_4c9183f7606f",
+    "instruction": "place a small order",
+    "action_summary": "POST api.example.com/orders",
+    "outcome": "needs_approval",
+    "reason": "amount exceeds the auto-allow threshold",
+    "routing_group": "payments-approvers",
+    "required_approvers": 1,
+    "nonce": "01JBQK9Z6X8N3M2P0R5T7V9W3A",
+    "exp": 1759000600
+  },
+  "decision": {
+    "approval_id": "apr_4c9183f7606f",
+    "decision": "approve",
+    "nonce": "01JBQK9Z6X8N3M2P0R5T7V9W3A",
+    "ts": "2026-06-11T12:00:30Z",
+    "kid": "approval-2026-06",
+    "decision_note": "verified the recipient out of band",
+    "signature": "PLACEHOLDER_approval_principal_signature_over_approval_id_decision_nonce_ts"
+  }
+}

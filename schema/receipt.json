@@ -31,6 +31,10 @@
       "type": "string",
       "pattern": "^[0-9a-f]+$",
       "description": "Ed25519 signature over UTF-8(entry_hash), hex-encoded."
+    },
+    "context": {
+      "type": "object",
+      "description": "OPTIONAL, UNSIGNED correlation metadata (spec.md §8.4, draft 0.4). NOT covered by entry_hash/signature and ignored by §8.1 verification; MUST NOT carry authorization-relevant data. Correlation only, e.g. agent_id / session_id / trace_id / principal."
     }
   }
 }

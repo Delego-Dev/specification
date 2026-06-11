@@ -1,6 +1,6 @@
 # delego Wire Specification
 
-**Version:** 0.3 · **Status:** Frozen · **License:** Apache-2.0
+**Version:** 0.4 (draft) · **Status:** Draft · **License:** Apache-2.0
 
 This document specifies the delego protocol for **intent-bound action
 authorization**: every action an autonomous agent proposes is authorized
@@ -75,12 +75,69 @@ of this document.
 | **0.1** | reference-complete, CTK-backed | Canonical JSON (§3); intent hash + action fingerprint (§4); deterministic policy & decision, first-match-wins, fail-closed (§5–§6); fingerprint-bound approval / confused-deputy guard (§7); append-only, hash-linked, Ed25519-signed audit chain + verification (§8). |
 | **0.2** | reference-complete, CTK-backed | Approval & audit hardening. Approvals are additionally bound to the `intent_hash` and made **single-use** (§7); an approved action's `execution` receipt carries the rule it was parked under, so `rate_limit` counts it (§5, §8); verification treats a malformed or partial receipt as a *failure* rather than aborting the walk (§8.1). |
 | **0.3** | reference-complete, CTK-backed | Two distinct tracks. **Additive hardening clauses** — the §4.2 Broker query obligation (≤ 0.2 preimage), policy-schema validation & fail-closed (§5.1), the authorization properties P1–P4 (§7.1), head-anchoring as the required truncation defense (§8.3), and the authorization-token profile (§9, reference-backed since delego 0.3.3) — are **additive on the 0.2 preimage**: they tighten obligations without changing any hashed/signed bytes, and **MAY** be adopted by a 0.2 implementation. **One breaking change** — folding the canonicalized URL query into the `action_fingerprint` preimage (§4.2) — changes every fingerprint; it is reference-backed since delego 0.3.0, with the `hashing` CTK vectors regenerated on the 0.3 preimage (the 0.2 preimage is preserved as `hashing-v0.2.json`). |
+| **0.4** | **draft** — not yet reference-backed | **Adoption clauses, additive on the 0.3 preimage.** A Broker-interface / separated-gateway contract, so a Broker can be written against a spec rather than by reverse-engineering the reference (§2.2); approval lifecycle & routing metadata (§7.2); an approval **notification & callback protocol** that takes the human decision out of the local console onto any surface, with the Agent out of the loop (§7.3); and an optional, **unsigned** receipt `context` for correlating receipts to operational identity (§8.4). All **additive**: they change no hashed or signed bytes and **MAY** be adopted by a 0.3 implementation. |
 
-This document is **frozen at 0.3**; the reference implements **0.3** (since
-delego 0.3.0; the §9 token profile since 0.3.3). Clauses introduced after 0.1
-are tagged inline — *(since 0.2)* for 0.2 behaviour, *(0.3 — additive)* for the
-additive-hardening clauses that may be layered on the 0.2 preimage, and
-*(NORMATIVE, 0.3 — breaking)* for the query-fold that changes the preimage.
+This document is at **0.4 (draft)**. **0.1–0.3 are reference-backed** — the
+reference implements **0.3** (since delego 0.3.0; the §9 token profile since
+0.3.3) — and the **0.4 clauses are draft, not yet in the reference**; like the
+0.3 additive track they change no hashed or signed bytes and **MAY** be layered
+on the 0.3 preimage. Clauses introduced after 0.1 are tagged inline — *(since
+0.2)* for 0.2 behaviour, *(0.3 — additive)* and *(0.4, draft — additive)* for
+additive clauses that may be layered on the preimage, and *(NORMATIVE, 0.3 —
+breaking)* for the query-fold that changes the preimage.
+
+## 2.2 Broker interface (the PEP contract) *(0.4, draft — additive)*
+
+> **Draft — not yet reference-backed.** This section consolidates the Broker's
+> existing transport-agnostic obligations (today scattered across §2, §4.2, §9.1)
+> into one contract a third party can implement against, and adds a concrete
+> **separated-gateway** request/response profile. It changes no hashed or signed
+> bytes and is additive on the 0.3 preimage.
+
+A **Broker** (the PEP, §2) is the only component that touches a credential. It
+acts **only** on an Authorizer verdict bound to the action's `action_fingerprint`
+(§4), and **MUST** honour the following regardless of transport:
+
+- **Reconstruct from the authorized action only.** The Broker **MUST** build the
+  outgoing request from the *authorized* fields — `method`, `host`, `path`,
+  `params`, and (on the 0.3 preimage) the fingerprint-bound `query` — and **MUST
+  NOT** forward any agent-supplied bytes not derivable from them. On the 0.3
+  preimage it forwards the bound query and refuses only a `#fragment`; on the
+  ≤ 0.2 preimage the §4.2 query obligation applies.
+- **Refuse what it cannot reconstruct (fail-closed).** A Broker that cannot
+  faithfully reconstruct the request from the authorized action — an unsupported
+  scheme, an un-modelled body encoding, a present `#fragment` — **MUST** refuse
+  the action rather than guess.
+- **Verify a token if it requires one.** A token-requiring Broker **MUST** verify
+  the authorization token per §9.1 (pin `alg = EdDSA`, exact `aud`, live `exp`,
+  unseen `jti`, unconsumed `cns`, and **recompute the fingerprint and require it
+  equals `fpr`**) before injecting a credential.
+- **Execute at most once per authorization.** A single decision, or a single
+  consumed `cns` (§7.1 P3), authorizes **one** credential release. A Broker
+  **MUST NOT** re-execute in a way that could double-effect; on an ambiguous or
+  unknown outcome it **MUST NOT** silently retry unless the upstream is
+  idempotent or it uses an idempotency key derived from the authorization (e.g.
+  the `cns` or the `action_fingerprint`).
+- **Report the outcome.** The Broker **MUST** return the execution outcome to the
+  Authorizer (or the Authorizer-side caller) so the `execution` receipt records
+  what happened (§8). An action **MUST NOT** be reported to the caller as
+  executed before its `execution` receipt is durably committed.
+
+The contract is **action-shaped, not HTTP-specific**: an HTTP gateway is one
+profile of it; a non-HTTP Broker (an SDK call, a queue publish) honours the same
+obligations over its own transport.
+
+### Separated-gateway profile (draft)
+
+When the Broker is a separate process or host — the case §9's token addresses —
+the Authorizer-side caller and the Broker exchange a JSON request/response per
+[`schema/broker-gateway.json`](schema/broker-gateway.json). The **request**
+carries the authorized action and its bindings (and the token, if used); the
+**response** reports a single execution attempt. A gateway **MUST** distinguish a
+**refusal** (it would not or could not enforce — a reconstruction failure, a
+token that fails §9.1, a `#fragment`) from an **upstream result** (it executed
+and the Service responded), so the Authorizer records the right receipt. See
+[`examples/broker-gateway.json`](examples/broker-gateway.json).
 
 ## 3. Canonicalization (NORMATIVE)
 
@@ -403,6 +460,78 @@ Authoritative vectors for P1 and P3 are in
 case refused even when `status = approved`, and the denied-approval case that is
 not resurrected). See the §10 conformance line.
 
+### 7.2 Approval lifecycle & routing metadata *(0.4, draft — additive)*
+
+> **Draft — not yet reference-backed.** Additive on the 0.3 preimage: these
+> fields live in the approval record, **not** in the `action_fingerprint` or the
+> signed receipt payload, and they **MUST NOT** affect the §7 resolution guards.
+
+When it parks an action, an Authorizer **MAY** attach operational metadata to the
+approval record alongside the binding (`action_fingerprint` + `intent_hash`):
+
+- `reason` — a human-readable statement of *why* approval is required, surfaced to
+  the approver.
+- `routing_group` / `required_approvers` — who SHOULD decide, and how many
+  distinct approvals are required before the status becomes `approved`.
+- `expires_at` (or `expires_after`) — a parked approval **MAY** expire. An expired
+  approval **MUST** resolve as `deny`: expiry **fails closed** and **MUST NOT**
+  auto-approve on timeout. This is a derived transition `pending →(timeout)→
+  expired`, where `expired` behaves as `denied` (terminal) for §7 resolution.
+
+An approver's decision **MAY** carry a `decision_note`, recorded for audit.
+
+**These fields are advisory.** They route and annotate a decision; they are
+**not** authorization logic. The §7 guards (fingerprint → intent → status) remain
+the sole basis for releasing an action, so attaching, changing, or omitting
+routing metadata can never turn a `deny` into an `allow`. Because routing decides
+*who* is trusted to approve, it is set by the Authorizer/policy and **MUST NOT**
+be settable by the Agent (§2 trust boundary): an Agent that could choose its own
+approver or expiry could route its action to a lax one.
+
+### 7.3 Approval delivery: notification & callback protocol *(0.4, draft — additive)*
+
+> **Draft — not yet reference-backed.** §7 defines the approval *decision*; it
+> does not define how a human is *reached*. This profile defines a transport so a
+> parked approval can be presented and resolved on any surface — chat, web,
+> ticketing — **with the Agent out of the loop**. It is additive: it changes no
+> hashed or signed bytes and binds no new authorization (the §7 guards still bind
+> the action at release time).
+
+**Notification (outbound).** On parking an action, an Authorizer **MAY** emit a
+notification to a configured sink (e.g. a webhook) per
+[`schema/approval-callback.json`](schema/approval-callback.json). The event
+carries `approval_id`, the human-readable `instruction`, the `action_summary`,
+the §7.2 `reason`/routing, `outcome = needs_approval`, and a single-use `nonce`
+with an `exp`. It **MUST NOT** carry a credential, the agent's raw input beyond
+the authorized action summary, or any secret.
+
+**Decision callback (inbound).** A surface returns a signed approve/deny for an
+`approval_id`. An Authorizer that accepts callbacks **MUST**:
+
+1. **Authenticate the principal.** The callback **MUST** be signed (or otherwise
+   authenticated) by a principal in the **human-approval trust domain (§2)**,
+   using an **approval key the Agent does not possess**. A callback whose
+   principal/signature cannot be verified **MUST** be ignored — the approval stays
+   `pending` (fail-closed). The approval key **MUST** be separate from any
+   credential available to the Agent; an Authorizer **MUST NOT** accept an
+   approve/deny from the same principal that proposes actions. *This is the trust
+   boundary that makes human approval meaningful: an Agent that could approve its
+   own actions defeats the entire control.*
+2. **Reject replays.** The callback's `nonce` (matching the notification) is
+   single-use; a re-delivered or replayed callback **MUST NOT** change a status a
+   second time. Re-delivery of the same decision **MUST** be idempotent (keyed by
+   `approval_id` + `nonce`).
+3. **Honour expiry.** A callback arriving after the approval's `expires_at`
+   (§7.2) **MUST** be treated as a no-op against the already-`deny` (expired)
+   approval.
+
+A verified approve transitions `pending → approved`; a verified deny → `denied`
+(terminal). The action itself is **not** carried in the callback — the callback
+decides an `approval_id` only — so even a compromised callback channel can at
+most approve or deny *that specific parked approval*; it cannot re-point it at a
+different action or instruction, because the §7 fingerprint/intent guards (P1/P2)
+still run when the Agent later presents an action to release it.
+
 ## 8. Receipt & audit chain (NORMATIVE)
 
 Every decision and execution is recorded as a **receipt**. Receipts form an
@@ -498,6 +627,31 @@ anchor is advanced as the chain grows.
   the prefix it was given, not that the prefix is complete.
 
 See the §10 conformance line.
+
+### 8.4 Receipt context (optional, unsigned) *(0.4, draft — additive)*
+
+> **Draft — not yet reference-backed.** Additive on the 0.3 preimage: it adds an
+> **unsigned** field *outside* the signed payload, so it changes no hashed or
+> signed bytes and never affects §8.1 verification.
+
+The signed payload is exactly the eleven fields of §8, and changing that set is a
+**breaking** change (§8.2). To let a deployment correlate receipts to operational
+identity *without* a breaking change, a receipt record **MAY** carry an OPTIONAL
+`context` object **outside** the signed payload — it is **not** covered by
+`entry_hash` or `signature`.
+
+- An Auditor **MUST** verify the chain (§8.1) over the signed payload alone and
+  **MUST** ignore `context`. Adding, changing, or removing `context` therefore
+  never affects a chain's validity.
+- Because `context` is **not tamper-evident**, it **MUST NOT** carry
+  authorization-relevant data — anything a decision or an audit conclusion depends
+  on belongs in the signed payload or in the `action_fingerprint`. `context` is
+  for correlation only: e.g. `agent_id`, `session_id`, `trace_id`, or a bound
+  `principal` (a SPIFFE ID / ID-JAG subject).
+
+Binding selected context *into* the signed payload (a tamper-evident receipt v2)
+is a candidate **breaking** change (§8.2) for a future revision; until then
+`context` is advisory.
 
 ## 9. Authorization Token (OPTIONAL PROFILE) *(0.3 — reference-backed since delego 0.3.3)*
 
@@ -661,6 +815,22 @@ CTK vectors. The reference implements **0.3**.
   remains on the ≤ 0.2 preimage checks itself against `hashing-v0.2.json` and is
   subject to the §4.2 Broker query obligation instead.
 
+**0.4 — additive (adoption)** *(draft — not yet reference-backed; additive on the
+0.3 preimage, MAY be adopted by a 0.3 implementation)*
+- A **Broker** SHOULD honour the §2.2 interface contract: reconstruct only from
+  the authorized action, refuse what it cannot reconstruct, execute at most once
+  per authorization, verify a token per §9.1 if it requires one, and report its
+  outcome. A separated gateway SHOULD speak the `schema/broker-gateway.json`
+  request/response and distinguish a refusal from an upstream result.
+- An **Authorizer** that exposes approvals beyond a local console **MUST** apply
+  the §7.3 trust-boundary rules: the approval-decision principal **MUST** be
+  separate from the Agent, callbacks **MUST** be authenticated and single-use, and
+  an unverifiable or replayed callback **MUST** leave the approval `pending`
+  (fail-closed). A parked approval that expires **MUST** resolve as `deny` (§7.2).
+- Approval routing/lifecycle metadata (§7.2) and receipt `context` (§8.4) are
+  OPTIONAL and advisory; an implementation that uses them **MUST NOT** let them
+  alter the §7 resolution guards or §8.1 verification.
+
 ## 11. Security considerations
 
 - **'Firewall' is an analogy, not the model.** delego is an **action-authorization
@@ -697,6 +867,16 @@ CTK vectors. The reference implements **0.3**.
   The reference v0.1 uses file-backed state and is **not** safe under concurrent
   writers (a single-writer daemon is planned).
 - **Clock skew** — `exp`/`iat` comparisons SHOULD allow a small, bounded skew.
+- **Approval-callback authenticity & replay** *(0.4 draft)* — the §7.3 approval
+  key is in the human-approval domain, distinct from any Agent credential;
+  callbacks are single-use (`nonce`) and fail closed when unverifiable. An Agent
+  that could forge an approve — or set its own routing/expiry (§7.2) — would
+  defeat human approval.
+- **Broker idempotency** *(0.4 draft)* — a Broker executes at most once per
+  authorization and MUST NOT double-effect on retry (§2.2, §7.1 P3).
+- **Unsigned receipt context** *(0.4 draft)* — `context` (§8.4) is not
+  tamper-evident and MUST NOT carry authorization-relevant data; it is for
+  correlation only (§8.4).
 
 ## 12. References
 

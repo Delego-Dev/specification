@@ -39,6 +39,11 @@ policy_schema = load("schema/policy.json")
 receipt_schema = load("schema/receipt.json")
 token_schema = load("schema/authorization-token.json")
 
+
+def subschema(schema: dict, ref: str) -> dict:
+    """A validator for one ``$defs`` member of a multi-definition schema."""
+    return {"$schema": schema["$schema"], "$defs": schema["$defs"], "$ref": ref}
+
 print("policy:")
 check("examples/policy.example.yaml", load("examples/policy.example.yaml"), policy_schema)
 
@@ -49,6 +54,18 @@ for i, line in enumerate((ROOT / "ctk/vectors/chain.jsonl").read_text().splitlin
 
 print("authorization token:")
 check("examples/authorization-token.json", load("examples/authorization-token.json"), token_schema)
+
+print("approval notification & callback (§7.3, draft 0.4):")
+ac_schema = load("schema/approval-callback.json")
+ac = load("examples/approval-callback.json")
+check("approval-callback.json#notification", ac["notification"], subschema(ac_schema, "#/$defs/notification"))
+check("approval-callback.json#decision", ac["decision"], subschema(ac_schema, "#/$defs/decision"))
+
+print("separated-gateway request & response (§2.2, draft 0.4):")
+bg_schema = load("schema/broker-gateway.json")
+bg = load("examples/broker-gateway.json")
+check("broker-gateway.json#request", bg["request"], subschema(bg_schema, "#/$defs/request"))
+check("broker-gateway.json#response", bg["response"], subschema(bg_schema, "#/$defs/response"))
 
 print()
 if errors:

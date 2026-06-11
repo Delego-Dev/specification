@@ -8,6 +8,44 @@ reference implements it. See [`spec.md` §2.1](spec.md) for the version matrix.
 
 ## [Unreleased]
 
+### Added (0.4 — draft, adoption clauses; additive on the 0.3 preimage, not yet reference-backed)
+The document moves to **0.4 (draft)**. 0.4 is an **adoption-first** track: every
+clause is additive (it changes no hashed or signed bytes and MAY be adopted by a
+0.3 implementation), and the one breaking item considered for 0.4 — folding
+request headers/body into the `action_fingerprint` preimage — is **deferred** to
+keep 0.4 free of a re-integration tax. The reference still implements **0.3**;
+these clauses are spec-led (*draft — not yet in reference*).
+- §2.2 — **Broker interface (the PEP contract)**: consolidates the Broker's
+  transport-agnostic obligations (reconstruct from the authorized action only,
+  refuse what it cannot reconstruct, verify a token per §9.1 if required, execute
+  at most once per authorization, report its outcome) into one contract a third
+  party can implement against, plus a **separated-gateway** request/response
+  profile (`schema/broker-gateway.json`) that distinguishes a Broker refusal from
+  an upstream result. Conformance line added to §10.
+- §7.2 — **Approval lifecycle & routing metadata**: optional `reason`,
+  `routing_group`/`required_approvers`, and `expires_at` on the approval record
+  (expiry **fails closed** → `deny`). Advisory only — set by the Authorizer/policy,
+  never the Agent; MUST NOT affect the §7 resolution guards.
+- §7.3 — **Approval notification & callback protocol**: takes the human decision
+  out of the local console onto any surface (chat/web/ticketing) with the Agent
+  out of the loop. Outbound notification + signed single-use decision callback
+  (`schema/approval-callback.json`); the approval principal MUST be separate from
+  the Agent and an unverifiable/replayed callback leaves the approval `pending`
+  (fail-closed). The callback carries no action, so the §7 P1/P2 guards still bind
+  the action at release time. Conformance line added to §10.
+- §8.4 — **Receipt context (optional, unsigned)**: a `context` object *outside*
+  the signed payload for correlating receipts to operational identity (agent /
+  session / trace / principal) without a breaking receipt change. NOT
+  tamper-evident; ignored by §8.1 verification; MUST NOT carry
+  authorization-relevant data. `schema/receipt.json` gains an optional `context`.
+- §10 — a **0.4 — additive (adoption)** conformance block; §11 — security notes
+  for approval-callback authenticity/replay, Broker idempotency, and unsigned
+  receipt context.
+- New schemas `schema/approval-callback.json`, `schema/broker-gateway.json` and
+  examples `examples/approval-callback.json`, `examples/broker-gateway.json`, all
+  wired into `validate.py`. No CTK `hashing`/`decisions`/`resolve`/`chain`/`token`
+  vector changes — `conformance.py` is unaffected (reference 0.3 ≤ spec 0.4).
+
 ### Fixed (spec prose — status bookkeeping caught up with the 0.3.0 query-fold)
 - `spec.md` had not been updated when the reference shipped the §4.2 query-fold
   (delego 0.3.0, CTK regenerated in #9) and contradicted itself: §2.1's version

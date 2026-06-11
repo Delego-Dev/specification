@@ -2,7 +2,7 @@
 
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-green.svg)](CONTRIBUTING.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Spec](https://img.shields.io/badge/spec-v0.3-blue.svg)](spec.md)
+[![Spec](https://img.shields.io/badge/spec-v0.4--draft-blue.svg)](spec.md)
 
 delego is a **deterministic pre-action authorization layer for AI agents**: it
 sits between an agent that proposes actions and the credential broker that
@@ -60,7 +60,7 @@ byte-for-byte.
 | Component | What it is |
 |-----------|------------|
 | **[Specification](spec.md)** | This document — the protocol. |
-| **[Schemas](schema/)** | JSON Schemas for the policy, the audit receipt, and the authorization token. |
+| **[Schemas](schema/)** | JSON Schemas for the policy, the audit receipt, the authorization token, and the 0.4-draft approval-callback and separated-gateway contracts. |
 | **[Conformance Test Kit](ctk/README.md)** | Language-agnostic vectors any implementation can check itself against. |
 | **[delego](https://github.com/Delego-Dev/delego)** | The reference implementation (Python) — policy engine, CLI, and MCP server. |
 
@@ -76,20 +76,26 @@ reproduce them; see [§10 Conformance](spec.md#10-conformance).
 
 ## Status & versioning
 
-**v0.3 — frozen.** The spec/protocol is versioned `0.x` (the reference *package*
-is `0.x.y`). The reference implements **0.3** (delego ≥ 0.3.0; the §9 token
-profile since 0.3.3); each prior protocol version has a standalone document of
-record in [`versions/`](versions/README.md) ([0.1](versions/spec-v0.1.md),
-[0.2](versions/spec-v0.2.md)). 0.3 has two tracks: **additive hardening clauses**
-— the §4.2 Broker query obligation (≤ 0.2 preimage), policy-schema validation
-(§5.1), the authorization properties P1–P4 (§7.1), head-anchoring (§8.3), and the
-authorization-token profile (§9) — which tighten obligations **without changing
-any hashed or signed bytes** and so MAY be adopted on the 0.2 preimage; and one
-**breaking** change — folding the canonicalized URL query into the
-`action_fingerprint` preimage (§4.2), reference-backed since delego 0.3.0 with
-the `hashing` CTK vectors regenerated on the 0.3 preimage. See the
-[§2.1 version matrix](spec.md#21-protocol-versions). A breaking change to the
-receipt fields bumps the version (see [§8.2](spec.md#82-schema-versioning)).
+**v0.4 — draft.** The spec/protocol is versioned `0.x` (the reference *package*
+is `0.x.y`). **0.1–0.3 are reference-backed** — the reference implements **0.3**
+(delego ≥ 0.3.0; the §9 token profile since 0.3.3); each prior protocol version
+has a standalone document of record in [`versions/`](versions/README.md)
+([0.1](versions/spec-v0.1.md), [0.2](versions/spec-v0.2.md)). 0.3 added **additive
+hardening** (the §4.2 Broker query obligation, policy-schema validation §5.1, the
+authorization properties P1–P4 §7.1, head-anchoring §8.3, the authorization-token
+profile §9) plus one **breaking** change (folding the canonicalized URL query into
+the `action_fingerprint` preimage, §4.2, reference-backed since delego 0.3.0).
+
+**0.4 (draft) is adoption-first** and **entirely additive** on the 0.3 preimage
+(*draft — not yet in the reference*): a Broker-interface / separated-gateway
+contract (§2.2), approval lifecycle & routing metadata (§7.2), an approval
+**notification & callback protocol** that takes the human decision out of the
+local console (§7.3), and an optional **unsigned** receipt `context` for
+correlation (§8.4). The one breaking item considered for 0.4 — folding request
+headers/body into the fingerprint — is **deferred** to avoid a re-integration
+tax. See the [§2.1 version matrix](spec.md#21-protocol-versions). A breaking
+change to the receipt fields bumps the version (see
+[§8.2](spec.md#82-schema-versioning)).
 
 ## Contributing
 
