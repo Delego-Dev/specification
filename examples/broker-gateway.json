@@ -1,0 +1,20 @@
+{
+  "_note": "Illustrative (spec.md §2.2, draft 0.4). The request carries the authorized place-order action and its bindings (fpr/iht from ctk/vectors/hashing.json); the response reports one execution attempt. Validated against schema/broker-gateway.json#/$defs/request and #/$defs/response.",
+  "request": {
+    "action": {
+      "method": "POST",
+      "url": "https://api.example.com/orders",
+      "params": { "amount": 2400, "currency": "USD", "destination": "internal" }
+    },
+    "intent_hash": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
+    "action_fingerprint": "4327df2637072bf058622d1f8baea6e431726f7332a50cd12ec970d6e43c2fd2",
+    "authorization_token": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.PLACEHOLDER.PLACEHOLDER"
+  },
+  "response": {
+    "executed": true,
+    "upstream": {
+      "status": 201,
+      "result": { "order_id": "ord_8f21" }
+    }
+  }
+}

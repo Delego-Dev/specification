@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Delego-Dev/specification/blob/main/schema/approval-callback.json",
+  "title": "delego approval notification & decision callback",
+  "description": "Draft (0.4): the outbound notification that delivers a parked approval to a human surface, and the inbound signed decision callback that resolves it. See spec.md §7.3. Additive — no hashed or signed wire bytes change.",
+  "$defs": {
+    "notification": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Outbound event emitted when an action is parked for approval. MUST NOT carry a credential or any secret.",
+      "required": ["approval_id", "instruction", "action_summary", "outcome", "nonce", "exp"],
+      "properties": {
+        "approval_id": { "type": "string", "description": "Identifier of the parked approval this notification is about." },
+        "instruction": { "type": "string", "description": "The human-readable instruction the action was proposed under (plaintext of intent_hash)." },
+        "action_summary": { "type": "string", "description": "Human-readable summary of the authorized action (e.g. 'POST api.example.com/orders')." },
+        "outcome": { "const": "needs_approval" },
+        "nonce": { "type": "string", "description": "Single-use value the matching decision callback MUST echo (replay defence)." },
+        "exp": { "type": "integer", "minimum": 0, "description": "Epoch seconds after which a decision callback for this notification is a no-op (the approval has expired → deny)." },
+        "reason": { "type": "string", "description": "Why approval is required (spec.md §7.2)." },
+        "routing_group": { "type": "string", "description": "Who SHOULD decide (spec.md §7.2). Advisory; set by the Authorizer/policy, never the Agent." },
+        "required_approvers": { "type": "integer", "minimum": 1, "description": "How many distinct approvals are required before status becomes approved (spec.md §7.2)." }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Inbound callback that resolves a parked approval. Authenticated by an approval key the Agent does not possess (spec.md §7.3). Carries NO action — the §7 fingerprint/intent guards still bind the action at release time.",
+      "required": ["approval_id", "decision", "nonce", "ts", "signature"],
+      "properties": {
+        "approval_id": { "type": "string", "description": "The parked approval being resolved." },
+        "decision": { "enum": ["approve", "deny"] },
+        "nonce": { "type": "string", "description": "MUST match the notification's nonce; single-use." },
+        "ts": { "type": "string", "description": "ISO-8601 UTC timestamp of the human decision." },
+        "signature": { "type": "string", "description": "Authentication over (approval_id, decision, nonce, ts) by the approval principal (human-approval trust domain, §2). An unverifiable signature MUST leave the approval pending." },
+        "kid": { "type": "string", "description": "OPTIONAL approval-key id, so a verifier can select the key and support rotation." },
+        "decision_note": { "type": "string", "description": "OPTIONAL human note recorded for audit (spec.md §7.2). MUST NOT alter the binding." }
+      }
+    }
+  }
+}

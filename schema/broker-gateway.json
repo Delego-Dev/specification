@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Delego-Dev/specification/blob/main/schema/broker-gateway.json",
+  "title": "delego separated-gateway request & response",
+  "description": "Draft (0.4): the JSON contract between an Authorizer-side caller and a separated Broker (PEP). See spec.md §2.2. The Broker reconstructs the request from the authorized action only and reports a single execution attempt, distinguishing a refusal from an upstream result. Additive — no hashed or signed wire bytes change.",
+  "$defs": {
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Authorizer-side → Broker. Carries the authorized action and its bindings; the Broker MUST reconstruct the outgoing request from these fields only (spec.md §2.2).",
+      "required": ["action", "intent_hash", "action_fingerprint"],
+      "properties": {
+        "action": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "url"],
+          "properties": {
+            "method": { "type": "string", "description": "Uppercase HTTP method, or the action verb for a non-HTTP transport." },
+            "url": { "type": "string", "description": "The authorized target (host/path/query as fingerprinted). The Broker refuses a #fragment (spec.md §4.2)." },
+            "params": { "type": "object", "description": "The authorized, decision-relevant fields (spec.md §4)." }
+          }
+        },
+        "intent_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "action_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "authorization_token": { "type": "string", "description": "OPTIONAL compact JWS (spec.md §9). If present, a token-requiring Broker MUST verify it per §9.1 before injecting a credential." }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Broker → Authorizer-side. Reports a single execution attempt. 'refused' MUST be distinguished from an executed upstream result so the Authorizer records the right receipt (spec.md §2.2, §8).",
+      "required": ["executed"],
+      "properties": {
+        "executed": { "type": "boolean", "description": "True iff the Broker injected a credential and forwarded the request upstream." },
+        "refused": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Present iff the Broker would not or could not enforce. Mutually exclusive with an upstream result.",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "enum": ["reconstruction_failed", "fragment_present", "token_invalid", "unsupported", "already_consumed"] },
+            "message": { "type": "string" }
+          }
+        },
+        "upstream": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Present iff executed is true: what the Service returned.",
+          "properties": {
+            "status": { "type": "integer", "description": "Upstream status code (HTTP) or transport-equivalent." },
+            "result": { "description": "Opaque upstream result body, echoed for the caller." },
+            "error": { "type": "string", "description": "Set when the execution attempt itself failed (e.g. a timeout); distinct from a Broker refusal." }
+          }
+        }
+      }
+    }
+  }
+}
