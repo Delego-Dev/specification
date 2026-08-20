@@ -51,9 +51,9 @@ byte-for-byte.
 - [Proposed Action & hashing](spec.md#4-proposed-action)
 - [Policy & decisions](spec.md#5-policy)
 - [Approval binding — the confused-deputy guard](spec.md#7-approval-binding-the-confused-deputy-guard)
-- [Authorization properties (P1–P4)](spec.md#71-authorization-properties-normative-03-draft--additive)
+- [Authorization properties (P1–P4)](spec.md#71-authorization-properties-normative-03--additive)
 - [Receipt & audit chain](spec.md#8-receipt--audit-chain-normative)
-- [Authorization Token](spec.md#9-authorization-token-optional-profile)
+- [Authorization Token](spec.md#9-authorization-token-optional-profile-03--reference-backed-since-delego-033)
 
 ## Ecosystem
 
@@ -77,16 +77,17 @@ reproduce them; see [§10 Conformance](spec.md#10-conformance).
 ## Status & versioning
 
 **v0.3 — frozen.** The spec/protocol is versioned `0.x` (the reference *package*
-is `0.x.y`). 0.1–0.2 are reference-backed; each prior protocol version has a
-standalone document of record in [`versions/`](versions/README.md)
-([0.1](versions/spec-v0.1.md), [0.2](versions/spec-v0.2.md) — what the reference
-implements today). 0.3 adds **additive hardening clauses**
-— the §4.2 Broker query obligation, policy-schema validation (§5.1), the
-authorization properties P1–P4 (§7.1), head-anchoring (§8.3), and the
+is `0.x.y`). The reference implements **0.3** (delego ≥ 0.3.0; the §9 token
+profile since 0.3.3); each prior protocol version has a standalone document of
+record in [`versions/`](versions/README.md) ([0.1](versions/spec-v0.1.md),
+[0.2](versions/spec-v0.2.md)). 0.3 has two tracks: **additive hardening clauses**
+— the §4.2 Broker query obligation (≤ 0.2 preimage), policy-schema validation
+(§5.1), the authorization properties P1–P4 (§7.1), head-anchoring (§8.3), and the
 authorization-token profile (§9) — which tighten obligations **without changing
-any hashed or signed bytes** and so MAY be adopted on the 0.2 preimage. One item
-is **deferred**: folding the URL query into the `action_fingerprint` preimage
-(§4.2) is a breaking change held for a later draft. See the
+any hashed or signed bytes** and so MAY be adopted on the 0.2 preimage; and one
+**breaking** change — folding the canonicalized URL query into the
+`action_fingerprint` preimage (§4.2), reference-backed since delego 0.3.0 with
+the `hashing` CTK vectors regenerated on the 0.3 preimage. See the
 [§2.1 version matrix](spec.md#21-protocol-versions). A breaking change to the
 receipt fields bumps the version (see [§8.2](spec.md#82-schema-versioning)).
 

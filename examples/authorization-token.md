@@ -1,10 +1,11 @@
 # Authorization Token — example
 
-> **Illustrative.** The authorization token (spec [§9](../spec.md#9-authorization-token-optional-profile))
+> **Illustrative.** The authorization token (spec [§9](../spec.md#9-authorization-token-optional-profile-03--reference-backed-since-delego-033))
 > is an **optional 0.3 profile** for carrying a PDP→PEP decision across a process
-> or network boundary; it is **not** the protocol's load-bearing control and is
-> **not yet minted by the reference implementation**. The compact form below uses
-> a placeholder signature.
+> or network boundary; it is **not** the protocol's load-bearing control. The
+> reference mints and verifies it since **delego 0.3.3** (see
+> [`../ctk/vectors/token.json`](../ctk/vectors/token.json) for signed verifier
+> vectors). The compact form below uses a placeholder signature.
 
 A delego authorization token is a compact **JWS / JWT** (`header.payload.signature`,
 each segment base64url-encoded) signed with `alg = EdDSA` (Ed25519).
@@ -25,7 +26,7 @@ each segment base64url-encoded) signed with `alg = EdDSA` (Ed25519).
   "exp": 1759000045,
   "jti": "01JBQK9Z6X8N3M2P0R5T7V9W1Y",
   "cns": "01JBQK9Z6X8N3M2P0R5T7V9W2Z",
-  "fpr": "c70d4ee57957202087887cb5e9d32222977b728bd06947b7761c283b6d4ed394",
+  "fpr": "4327df2637072bf058622d1f8baea6e431726f7332a50cd12ec970d6e43c2fd2",
   "iht": "76f8eef1b97e1213a59eec28cedf15bb999fdb00a3fd17f8343bc4676fdbb4f3",
   "apr": "apr_4c9183f7606f",
   "sub": "agent:onecli/session-7f3a",
